@@ -31,6 +31,7 @@ import {
   upsertBlogPost,
   deleteBlogPost
 } from './lib/db';
+import { trackProductClick, trackPageView } from './lib/gtag';
 
 export const App: React.FC = () => {
   // 1. Affiliate Configuration State (desde Supabase)
@@ -111,6 +112,7 @@ export const App: React.FC = () => {
     const clean = path.startsWith('/') ? path : `/${path}`;
     window.history.pushState({}, '', clean);
     setRoute(getPathnameRoute());
+    trackPageView();
     window.scrollTo({ top: 0 });
   };
 
@@ -150,8 +152,10 @@ export const App: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
 
-  // 8. Affiliate Click (métricas reales se consultan en el dashboard de Amazon Associates)
-  const handleTrackClick = (_product: Product) => {};
+  // 8. Affiliate Click -> GA4 select_item (las métricas de ingresos se consultan en Amazon)
+  const handleTrackClick = (product: Product) => {
+    trackProductClick(product.title, product.category, product.amazonUrl);
+  };
 
   // 9. Product CRUD Handlers (Supabase)
   const handleAddProduct = async (newProd: Product) => {
