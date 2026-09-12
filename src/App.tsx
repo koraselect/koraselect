@@ -448,7 +448,6 @@ export const App: React.FC = () => {
       {isCreateModalOpen && (
         <CreateListModal
           categories={CATEGORIES}
-          affiliateTag={affiliateConfig.tag}
           onClose={() => setIsCreateModalOpen(false)}
           onAddProduct={handleAddProduct}
         />

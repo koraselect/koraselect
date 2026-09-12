@@ -327,7 +327,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
                         <td>
                           <a
-                            href={`${p.amazonUrl}?tag=${affiliateConfig.tag}`}
+                            href={p.amazonUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="amazon-link-pill"

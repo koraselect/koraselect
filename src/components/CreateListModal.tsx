@@ -5,14 +5,12 @@ import confetti from 'canvas-confetti';
 
 interface CreateListModalProps {
   categories: Category[];
-  affiliateTag: string;
   onClose: () => void;
   onAddProduct: (product: Product) => void;
 }
 
 export const CreateListModal: React.FC<CreateListModalProps> = ({
   categories,
-  affiliateTag,
   onClose,
   onAddProduct
 }) => {
@@ -142,7 +140,7 @@ export const CreateListModal: React.FC<CreateListModalProps> = ({
           </div>
           <h2 className="modal-title font-heading">Subir Lista / Producto a tu Collage</h2>
           <p className="modal-sub">
-            Agrega productos a tus listas por categoría. Todos los enlaces se publicarán automáticamente con tu Tag de Afiliado (<code>{affiliateTag}</code>).
+            Agrega productos a tus listas por categoría. Los enlaces se publican tal cual: pega tu link de afiliado completo (ej: amzn.to) para conservar tu comisión.
           </p>
 
           {/* Mode Switcher */}

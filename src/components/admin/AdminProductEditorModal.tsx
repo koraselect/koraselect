@@ -312,8 +312,8 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                     </span>
                   )}
                   <span className="helper-text">
-                    Puedes pegar la URL normal del producto, tu link de afiliado completo o un amzn.to: si ya trae tag se
-                    respeta tal cual, si no se inyecta tu tag configurado automáticamente.
+                    Pega aquí tu link de afiliado completo (recomendado: amzn.to o el link que generas en Amazon
+                    Associates). Se publicará tal cual, sin modificaciones, para no perder la comisión.
                   </span>
                 </div>
 
@@ -477,7 +477,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                     <li><strong>Categoría:</strong> {categories.find(c => c.id === category)?.name}</li>
                     <li><strong>Precio Referencial:</strong> {price ? `$${parseFloat(price).toFixed(2)}` : 'No definido (no se publica)'}</li>
                     <li><strong>Link Amazon:</strong> {amazonUrl}</li>
-                    <li><strong>Tag Inyectado:</strong> <code>tag={affiliateTag}</code></li>
+                    <li><strong>Link de Afiliado:</strong> se publica tal cual (sin modificaciones)</li>
                     <li><strong>Variantes de Color:</strong> {colors.length} seleccionadas</li>
                   </ul>
                 </div>
