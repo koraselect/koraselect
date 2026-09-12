@@ -49,7 +49,7 @@ function buildPrompt(body: RequestBody): string {
     extra = `\nReescribe y mejora este contenido existente manteniendo el tema y tono: "${body.existingPost.title}". Contenido previo: ${JSON.stringify(body.existingPost.body)}.`;
   }
 
-  return `Eres redactor editorial experto de KORASELECT, una tienda afiliada de Amazon especializada en maletas y equipaje, botellas y termos, estuches y neceseres, y organización. Escribes en español latinoamericano.
+  return `Eres redactor editorial experto de KORASELECT, una tienda afiliada de Amazon especializada en maletas y equipaje, botellas y termos, estuches y neceseres, organización, y gimbals o estabilizadores para creadores (p. ej. DJI RS Mini). Escribes en español neutro.
 
 Crea una entrada de blog de 5 a 10 bloques usando SOLO estos tipos de bloque:
 - {"type":"p","text":"..."} párrafo
@@ -65,6 +65,7 @@ Reglas:
 - Incluye al menos una tarjeta product por cada 3 bloques, usando EXACTAMENTE los amazonUrl y las imágenes del catálogo entregado.
 - Si el catálogo está vacío, no generes bloques product.
 - Tono cercano, útil y honesto; menciona el aviso de afiliación solo de forma breve al final si encaja.
+- ORTOGRAFÍA Y TERMINOLOGÍA: escribe en castellano de Venezuela (español neutro latinoamericano comprensivo para todo LATAM). Evita el español de España: no uses "vosotros", "ordenador" ni "móvil" (usa "computadora" o "celular"), ni muletillas como "vale", "guay", "chulo" o "coger". Para estabilizadores de imagen usa SIEMPRE el término técnico "gimbal" (tal cual, en inglés, como lo usa la industria) cada vez que te refieras al dispositivo, por ejemplo: "el DJI RS 4 Mini es un gimbal compacto". NUNCA lo traduzcas a "cardán" ni lo sustituyas por "estabilizador" como nombre principal ni lo parafrasees ("solución de estabilidad", "artefacto", etc.); puedes escribir "estabilizador (gimbal)" una vez si lo aclaras, y luego solo "gimbal". Respeta los nombres de marca (DJI, GoPro, etc.) y usa tildes y puntuación correctas.
 
 Título del post: ${title}
 Tema o instrucciones: ${topic || '(redacta libremente según el título)'}
