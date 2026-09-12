@@ -204,6 +204,11 @@ button {
   display: block;
 }
 
+.helper-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .form-group input, 
 .form-group select, 
 .form-group textarea,

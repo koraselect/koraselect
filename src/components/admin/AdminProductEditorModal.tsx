@@ -82,8 +82,8 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
 
   // Submit Handler
   const handleSave = () => {
-    if (!title || !price || !amazonUrl) {
-      alert('Por favor completa los campos obligatorios: Título, Precio y Enlace de Amazon.');
+    if (!title || !amazonUrl) {
+      alert('Por favor completa los campos obligatorios: Título y Enlace de Amazon.');
       setCurrentStep(1);
       return;
     }
@@ -223,15 +223,15 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                 </div>
 
                 <div className="form-group">
-                  <label>Precio de Venta ($ USD) *</label>
+                  <label>Precio Referencial ($ USD)</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="189.99"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    required
                   />
+                  <span className="helper-text">Opcional. Solo referencia interna: no se muestra en la web pública.</span>
                 </div>
 
                 <div className="form-group">
@@ -427,7 +427,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                   <h4 className="font-heading text-lg font-bold">Resumen de Publicación</h4>
                   <ul className="summary-list">
                     <li><strong>Categoría:</strong> {categories.find(c => c.id === category)?.name}</li>
-                    <li><strong>Precio Final:</strong> ${parseFloat(price || '0').toFixed(2)}</li>
+                    <li><strong>Precio Referencial:</strong> {price ? `$${parseFloat(price).toFixed(2)}` : 'No definido (no se publica)'}</li>
                     <li><strong>Link Amazon:</strong> {amazonUrl}</li>
                     <li><strong>Tag Inyectado:</strong> <code>tag={affiliateTag}</code></li>
                     <li><strong>Variantes de Color:</strong> {colors.length} seleccionadas</li>
