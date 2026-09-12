@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Product, Category, ColorOption, ProductHighlight } from '../../types/product';
-import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield } from 'lucide-react';
+import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle } from 'lucide-react';
 import { ProductCard } from '../ProductCard';
+import { lookupAmazonProduct } from '../../lib/amazon';
 
 interface AdminProductEditorModalProps {
   productToEdit?: Product | null;
@@ -36,6 +37,9 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   const [badge, setBadge] = useState(productToEdit?.badge || 'Top Seller');
   const [dimensions, setDimensions] = useState(productToEdit?.dimensions || '');
   const [capacity, setCapacity] = useState(productToEdit?.capacity || '');
+  const [asin, setAsin] = useState(productToEdit?.asin || '');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState('');
 
   // Colors State
   const [colors, setColors] = useState<ColorOption[]>(
@@ -80,6 +84,30 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
     setHighlights(highlights.filter((_, i) => i !== idx));
   };
 
+  // Autorelleno desde enlace de Amazon
+  const handleAutoFillFromAmazon = async () => {
+    setLookupError('');
+    const url = amazonUrl.trim();
+    if (!url) {
+      setLookupError('Pega primero el enlace del producto de Amazon.');
+      return;
+    }
+    setLookupLoading(true);
+    try {
+      const data = await lookupAmazonProduct(url);
+      if (data.title && !title) setTitle(data.title);
+      if (data.price !== null && data.price > 0) setPrice(data.price.toString());
+      if (data.rating !== null && data.rating > 0) setRating(data.rating.toString());
+      if (data.reviewsCount !== null && data.reviewsCount > 0) setReviewsCount(data.reviewsCount.toString());
+      if (data.image) setMainImage(data.image);
+      if (data.asin) setAsin(data.asin);
+    } catch (e) {
+      setLookupError(e instanceof Error ? e.message : 'No se pudo extraer el producto de Amazon.');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   // Submit Handler
   const handleSave = () => {
     if (!title || !amazonUrl) {
@@ -98,6 +126,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
       rating: parseFloat(rating) || 4.9,
       reviewsCount: parseInt(reviewsCount, 10) || 10,
       amazonUrl,
+      asin: asin || undefined,
       mainImage: mainImage || 'https://images.unsplash.com/photo-1565026057447-b8899f291105?auto=format&fit=crop&w=1000&q=80',
       badge: badge || 'A+ Content',
       dimensions,
@@ -267,6 +296,21 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                       required
                     />
                   </div>
+                  <button
+                    type="button"
+                    className="btn-autofill-amazon"
+                    onClick={handleAutoFillFromAmazon}
+                    disabled={lookupLoading}
+                  >
+                    {lookupLoading ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />}
+                    <span>{lookupLoading ? 'Extrayendo datos de Amazon…' : 'Autorellenar desde Amazon'}</span>
+                  </button>
+                  {lookupError && (
+                    <span className="autofill-error">
+                      <AlertCircle size={13} />
+                      {lookupError}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-group col-span-2">
@@ -534,6 +578,49 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
           font-size: 1.7rem;
           line-height: 1.25;
           margin-top: 6px;
+        }
+
+        .btn-autofill-amazon {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          align-self: flex-start;
+          margin-top: 2px;
+          background-color: #fff3e0;
+          color: #b45309;
+          border: 1px solid #fed7aa;
+          font-size: 0.8rem;
+          font-weight: 600;
+          padding: 8px 14px;
+          border-radius: var(--border-radius-pill);
+          transition: all var(--transition-fast);
+          cursor: pointer;
+        }
+
+        .btn-autofill-amazon:hover:not(:disabled) {
+          background-color: #ffe4c4;
+        }
+
+        .btn-autofill-amazon:disabled {
+          opacity: 0.6;
+          cursor: wait;
+        }
+
+        .autofill-error {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #c62828;
+          font-size: 0.78rem;
+        }
+
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
         .steps-bar {
