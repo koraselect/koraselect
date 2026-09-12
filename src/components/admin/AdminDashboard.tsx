@@ -6,7 +6,7 @@ import { ConfirmActionModal } from './ConfirmActionModal';
 import { BlogManager } from './BlogManager';
 import { 
   ShoppingBag, Plus, Search, Edit3, Trash2, ExternalLink, 
-  MousePointerClick, DollarSign, Tag, LogOut, ArrowUpRight,
+  Tag, LogOut, ArrowUpRight,
   Copy, RotateCcw, Check, Layers, AlertCircle, Newspaper
 } from 'lucide-react';
 
@@ -145,7 +145,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <ShoppingBag size={20} />
             </div>
             <div>
-              <span className="brand-name font-heading">LUXE ADMIN</span>
+              <span className="brand-name font-heading">KORASELECT ADMIN</span>
               <span className="brand-tagline">Panel de Control de Productos (Volver al Landing)</span>
             </div>
           </div>
@@ -188,26 +188,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="metric-data">
               <div className="metric-num">{products.length}</div>
               <div className="metric-label">Productos Publicados</div>
-            </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-icon-box clicks">
-              <MousePointerClick size={22} />
-            </div>
-            <div className="metric-data">
-              <div className="metric-num">{affiliateConfig.totalClicks}</div>
-              <div className="metric-label">Clics de Afiliado Registrados</div>
-            </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-icon-box revenue">
-              <DollarSign size={22} />
-            </div>
-            <div className="metric-data">
-              <div className="metric-num">${affiliateConfig.estimatedCommissions.toFixed(2)}</div>
-              <div className="metric-label">Regalías Estimadas ($ USD)</div>
             </div>
           </div>
 

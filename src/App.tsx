@@ -150,16 +150,8 @@ export const App: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
 
-  // 8. Track Affiliate Clicks (persistido en Supabase)
-  const handleTrackClick = (product: Product) => {
-    const next: AffiliateConfig = {
-      ...affiliateConfig,
-      totalClicks: affiliateConfig.totalClicks + 1,
-      estimatedCommissions: +(affiliateConfig.estimatedCommissions + product.price * 0.06).toFixed(2)
-    };
-    setAffiliateConfig(next);
-    saveAffiliateConfig(next).catch((e) => console.error('Error guardando métricas:', e));
-  };
+  // 8. Affiliate Click (métricas reales se consultan en el dashboard de Amazon Associates)
+  const handleTrackClick = (_product: Product) => {};
 
   // 9. Product CRUD Handlers (Supabase)
   const handleAddProduct = async (newProd: Product) => {

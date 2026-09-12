@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AffiliateConfig } from '../types/product';
-import { X, Tag, DollarSign, MousePointerClick, Check, Copy, Globe, Code, RefreshCw, Save, ShieldCheck } from 'lucide-react';
+import { X, Tag, Check, Copy, Globe, Code, Save, ShieldCheck } from 'lucide-react';
 
 interface AffiliateSettingsModalProps {
   config: AffiliateConfig;
@@ -26,15 +26,6 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
-  const getCurrencySymbol = (curr: string) => {
-    switch (curr) {
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'MXN': return '$';
-      default: return '$';
-    }
-  };
-
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!tag.trim()) {
@@ -53,16 +44,6 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
     });
 
     onClose();
-  };
-
-  const handleResetMetrics = () => {
-    if (window.confirm('¿Deseas reiniciar el contador de clics y ganancias a cero?')) {
-      onSaveConfig({
-        ...config,
-        totalClicks: 0,
-        estimatedCommissions: 0
-      });
-    }
   };
 
   const handleCopyLink = () => {
@@ -126,25 +107,6 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
 
         {/* Drawer Content Body */}
         <div className="drawer-body">
-          {/* Quick Metrics Bar */}
-          <div className="drawer-metrics-row">
-            <div className="mini-metric">
-              <MousePointerClick size={16} className="text-blue-600" />
-              <div>
-                <div className="metric-val">{config.totalClicks}</div>
-                <div className="metric-lbl">Clics Totales</div>
-              </div>
-            </div>
-
-            <div className="mini-metric">
-              <DollarSign size={16} className="text-emerald-600" />
-              <div>
-                <div className="metric-val">{getCurrencySymbol(currency)}{config.estimatedCommissions.toFixed(2)}</div>
-                <div className="metric-lbl">Comisiones</div>
-              </div>
-            </div>
-          </div>
-
           <form onSubmit={handleSave} className="drawer-form">
             {/* TAB 1: TAG & REGALÍAS */}
             {activeTab === 'affiliate' && (
@@ -250,11 +212,6 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
                     <span>{copiedEmbed ? '¡Código iFrame Copiado!' : 'Copiar iFrame'}</span>
                   </button>
                 </div>
-
-                <button type="button" className="btn-reset-stat-drawer" onClick={handleResetMetrics}>
-                  <RefreshCw size={14} />
-                  <span>Reiniciar Métricas de Clics</span>
-                </button>
               </div>
             )}
 

@@ -1,9 +1,7 @@
 import { Product, Category, AffiliateConfig } from '../types/product';
 
 export const INITIAL_AFFILIATE_CONFIG: AffiliateConfig = {
-  tag: 'neostore-20',
-  totalClicks: 148,
-  estimatedCommissions: 324.50,
+  tag: 'koraselect-20',
   currency: 'USD',
   siteName: 'KORASELECT',
   siteTagline: 'Ofertas Curadas de Amazon',

@@ -57,8 +57,6 @@ export interface Category {
 
 export interface AffiliateConfig {
   tag: string;
-  totalClicks: number;
-  estimatedCommissions: number;
   currency: string;
   siteName: string;
   siteTagline: string;
