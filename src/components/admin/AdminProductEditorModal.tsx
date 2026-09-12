@@ -311,6 +311,10 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                       {lookupError}
                     </span>
                   )}
+                  <span className="helper-text">
+                    Puedes pegar la URL normal del producto, tu link de afiliado completo o un amzn.to: si ya trae tag se
+                    respeta tal cual, si no se inyecta tu tag configurado automáticamente.
+                  </span>
                 </div>
 
                 <div className="form-group col-span-2">
