@@ -236,7 +236,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="table-wrapper-card">
           <div className="table-toolbar">
             <div>
-              <h2 className="toolbar-title font-heading">Gestión de Catálogo (CRUD)</h2>
+              <h2 className="toolbar-title font-heading">Gestión de Catálogo</h2>
               <p className="toolbar-sub">Publica, edita, duplica o elimina productos en tiempo real.</p>
             </div>
 
