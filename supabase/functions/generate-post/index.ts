@@ -29,6 +29,7 @@ interface RequestBody {
   blogCategory?: string;
   products?: CatalogProduct[];
   existingPost?: { title?: string; body?: unknown } | null;
+  debug?: boolean;
 }
 
 function buildPrompt(body: RequestBody): string {
@@ -159,6 +160,24 @@ async function callGemini(key: string, prompt: string, models: string[]): Promis
   throw lastError || new Error('Gemini falló');
 }
 
+async function listGroqModels(key: string): Promise<string[]> {
+  const res = await fetch('https://api.groq.com/openai/v1/models', {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+  if (!res.ok) {
+    throw new Error(`Groq models ${res.status}: ${await res.text()}`);
+  }
+  const data = await res.json();
+  const models = (data?.data || []) as { id: string }[];
+  return models.map((m) => m.id);
+}
+
+function probeGroq(key: string, prompt: string, models: string[]) {
+  return callGroq(key, prompt, models).catch((err: unknown) => {
+    throw err instanceof Error ? new Error(`Groq probe falló: ${err.message}`) : new Error(String(err));
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -177,8 +196,36 @@ Deno.serve(async (req) => {
 
     const groqKey = Deno.env.get('GROQ_API_KEY');
     const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const groqModels = [Deno.env.get('GROQ_MODEL') || 'grok-2', 'grok-2', 'llama-3.3-70b-versatile'].filter(Boolean) as string[];
+    const groqModels = [Deno.env.get('GROQ_MODEL') || 'openai/gpt-oss-120b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'groq/compound'].filter(Boolean) as string[];
     const geminiModels = [Deno.env.get('GEMINI_MODEL') || 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.5-flash', 'gemini-2.5-flash-lite'].filter(Boolean) as string[];
+
+    // Modo depuración: nunca expone las claves, solo status/errores y lista de modelos.
+    if (body.debug) {
+      const debugPayload: Record<string, unknown> = {
+        debug: true,
+        engine: null,
+        blocks: null,
+        groqModelsConfigured: [...new Set(groqModels)],
+      };
+      if (!groqKey) {
+        debugPayload.error = 'GROQ_API_KEY no está configurado como secreto.';
+        return new Response(JSON.stringify(debugPayload), { headers: jsonHeaders });
+      }
+      try {
+        debugPayload.models = await listGroqModels(groqKey);
+      } catch (err) {
+        debugPayload.modelsListError = (err as Error).message.slice(0, 400);
+      }
+      try {
+        const raw = await probeGroq(groqKey, prompt, [...new Set(groqModels)]);
+        debugPayload.probeStatus = 'ok';
+        debugPayload.probeRaw = raw.slice(0, 200);
+      } catch (err) {
+        debugPayload.probeStatus = 'error';
+        debugPayload.probeError = (err as Error).message.slice(0, 600);
+      }
+      return new Response(JSON.stringify(debugPayload), { headers: jsonHeaders });
+    }
 
     // 1) Intentar Groq (servidor de modelos estilo Grok)
     if (groqKey) {
