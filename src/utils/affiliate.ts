@@ -1,4 +1,4 @@
-export const AMAZON_CTA_TEXT = 'Ver precio y disponibilidad en Amazon';
+export const AMAZON_CTA_TEXT = 'Ver precio';
 
 export const AMAZON_REL = 'sponsored nofollow';
 

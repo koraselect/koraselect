@@ -143,6 +143,8 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  white-space: nowrap;
+  max-width: 100%;
   box-shadow: 0 4px 14px rgba(255, 143, 0, 0.35);
   transition: all var(--transition-fast);
 }
