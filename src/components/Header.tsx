@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Search, PlusCircle, Settings, Lock, UserCheck, LogOut } from 'lucide-react';
+import { Search, PlusCircle, Settings, Lock, UserCheck, LogOut } from 'lucide-react';
 import { AffiliateConfig } from '../types/product';
 
 interface HeaderProps {
@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Logo - Redirects to Front Landing */}
         <div className="brand-logo" onClick={handleLogoClick} title="Ir a la Portada Principal (Front Landing)">
           <div className="logo-icon-wrapper">
-            <ShoppingBag className="logo-icon" size={22} />
+            <img src="/logo-koraselect.png" alt={affiliateConfig.siteName || 'KORASELECT'} className="logo-mark" />
           </div>
           <div>
             <span className="brand-name font-heading">{affiliateConfig.siteName || 'KORASELECT'}</span>
@@ -212,11 +212,17 @@ export const Header: React.FC<HeaderProps> = ({
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          background-color: var(--text-dark);
-          color: var(--bg-main);
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
+        }
+
+        .logo-mark {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
         }
 
         .brand-name {
