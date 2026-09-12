@@ -80,7 +80,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         <div className="footer-bottom">
           <span>&copy; {new Date().getFullYear()} KORASELECT. Todos los derechos reservados.</span>
           <span className="crafted-with">
-            Diseñado con <Heart size={14} fill="#e53935" stroke="#e53935" /> para Creadores de Amazon Afiliados
+            Diseñado con <Heart size={14} fill="#e53935" stroke="#e53935" /> para ayudarte a encontrar los mejores productos en Amazon
           </span>
         </div>
       </div>
