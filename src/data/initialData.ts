@@ -39,6 +39,114 @@ export const CATEGORIES: Category[] = [
     name: 'Organización',
     icon: 'Package',
     description: 'Organizadores de lencería, fundas impermeables y soluciones de storage'
+  },
+  {
+    id: 'electronica',
+    name: 'Electrónica',
+    icon: 'Cpu',
+    description: 'Categoría padre de Amazon: electrónica, audio, video y periféricos'
+  },
+  {
+    id: 'computacion',
+    name: 'Computadoras y Accesorios',
+    icon: 'Laptop',
+    description: 'Categoría padre de Amazon: computadoras, componentes y accesorios'
+  },
+  {
+    id: 'hogar-cocina',
+    name: 'Hogar y Cocina',
+    icon: 'Home',
+    description: 'Categoría padre de Amazon: artículos para el hogar y la cocina'
+  },
+  {
+    id: 'belleza-cuidado-personal',
+    name: 'Belleza y Cuidado Personal',
+    icon: 'Sparkles',
+    description: 'Categoría padre de Amazon: belleza, cuidado personal y cosméticos'
+  },
+  {
+    id: 'salud-hogar',
+    name: 'Salud y Hogar',
+    icon: 'HeartPulse',
+    description: 'Categoría padre de Amazon: salud, cuidado del hogar y bienestar'
+  },
+  {
+    id: 'deportes-aire-libre',
+    name: 'Deportes y Aire Libre',
+    icon: 'Dumbbell',
+    description: 'Categoría padre de Amazon: deportes, ejercicio y actividades al aire libre'
+  },
+  {
+    id: 'juguetes-juegos',
+    name: 'Juguetes y Juegos',
+    icon: 'Gamepad2',
+    description: 'Categoría padre de Amazon: juguetes, juegos y entretenimiento infantil'
+  },
+  {
+    id: 'ropa-zapatos-accesorios',
+    name: 'Ropa, Zapatos y Accesorios',
+    icon: 'Shirt',
+    description: 'Categoría padre de Amazon: moda, calzado y accesorios'
+  },
+  {
+    id: 'bebe',
+    name: 'Bebé',
+    icon: 'Baby',
+    description: 'Categoría padre de Amazon: productos para bebé y maternal'
+  },
+  {
+    id: 'mascotas',
+    name: 'Mascotas',
+    icon: 'PawPrint',
+    description: 'Categoría padre de Amazon: suministros para mascotas'
+  },
+  {
+    id: 'jardin-exteriores',
+    name: 'Jardín y Exteriores',
+    icon: 'Flower2',
+    description: 'Categoría padre de Amazon: jardinería y espacios exteriores'
+  },
+  {
+    id: 'herramientas-mejoras-hogar',
+    name: 'Herramientas y Mejoras del Hogar',
+    icon: 'Hammer',
+    description: 'Categoría padre de Amazon: herramientas y mejoras para el hogar'
+  },
+  {
+    id: 'oficina-papeleria',
+    name: 'Oficina y Papelería',
+    icon: 'PenTool',
+    description: 'Categoría padre de Amazon: suministros de oficina y papelería'
+  },
+  {
+    id: 'automotriz',
+    name: 'Automotriz',
+    icon: 'Car',
+    description: 'Categoría padre de Amazon: accesorios y partes automotrices'
+  },
+  {
+    id: 'alimentos-bebidas',
+    name: 'Alimentos y Bebidas',
+    icon: 'Apple',
+    description: 'Categoría padre de Amazon: despensa, snacks y alimentos'
+  },
+  {
+    id: 'libros',
+    name: 'Libros',
+    icon: 'BookOpen',
+    description: 'Categoría padre de Amazon: libros y audiolibros'
+  },
+  {
+    id: 'arte-manualidades',
+    name: 'Arte y Manualidades',
+    icon: 'Palette',
+    description: 'Categoría padre de Amazon: arte, manualidades y costura'
+  },
+  {
+    id: 'joyeria-relojes',
+    name: 'Joyería y Relojes',
+    icon: 'Gem',
+    description: 'Categoría padre de Amazon: joyería, relojes y accesorios'
   }
 ];
 
