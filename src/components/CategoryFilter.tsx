@@ -96,6 +96,9 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
           overflow-x: auto;
           padding-bottom: 4px;
           scrollbar-width: none;
+          flex: 1 1 auto;
+          min-width: 0;
+          max-width: 100%;
         }
 
         .category-chips-scroll::-webkit-scrollbar {
@@ -183,6 +186,11 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
           .category-bar {
             flex-direction: column;
             align-items: flex-start;
+            width: 100%;
+          }
+          .category-chips-scroll {
+            width: 100%;
+            flex: none;
           }
           .view-mode-switcher {
             width: 100%;
