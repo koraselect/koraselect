@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product, Category, ColorOption, ProductHighlight, ProductVideo } from '../../types/product';
-import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle } from 'lucide-react';
+import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle, ZoomIn, Check } from 'lucide-react';
 import { ProductCard } from '../ProductCard';
 import { lookupAmazonProduct } from '../../lib/amazon';
 
@@ -68,6 +68,58 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
 
   const handleRemoveVideo = (idx: number) => {
     setVideos(videos.filter((_, i) => i !== idx));
+  };
+
+  // Visor ampliado (lightbox) para fotos de galería / principal
+  const [lightbox, setLightbox] = useState<{ kind: 'gallery' | 'main'; index: number } | null>(null);
+  const [replaceUrl, setReplaceUrl] = useState('');
+
+  const openLightbox = (kind: 'gallery' | 'main', index: number) => {
+    setReplaceUrl(kind === 'gallery' ? galleryImages[index] : mainImage);
+    setLightbox({ kind, index });
+  };
+
+  const applyReplaceFromLightbox = () => {
+    if (!lightbox) return;
+    const u = replaceUrl.trim();
+    if (!u) return;
+    if (lightbox.kind === 'gallery') {
+      setGalleryImages(galleryImages.map((g, i) => (i === lightbox.index ? u : g)));
+    } else {
+      setMainImage(u);
+    }
+    setLightbox(null);
+  };
+
+  const removeFromLightbox = () => {
+    if (!lightbox) return;
+    if (lightbox.kind === 'gallery') {
+      setGalleryImages(galleryImages.filter((_, i) => i !== lightbox.index));
+    } else {
+      setMainImage('');
+    }
+    setLightbox(null);
+  };
+
+  const useAsMainFromLightbox = () => {
+    if (!lightbox || lightbox.kind !== 'gallery') return;
+    const img = galleryImages[lightbox.index];
+    if (!img) return;
+    setMainImage(img);
+    setGalleryImages(galleryImages.filter((g) => g !== img));
+    setLightbox(null);
+  };
+
+  const lightboxPrev = () => {
+    if (!lightbox || lightbox.kind !== 'gallery') return;
+    setLightbox({ kind: 'gallery', index: (lightbox.index - 1 + galleryImages.length) % galleryImages.length });
+    setReplaceUrl(galleryImages[(lightbox.index - 1 + galleryImages.length) % galleryImages.length]);
+  };
+
+  const lightboxNext = () => {
+    if (!lightbox || lightbox.kind !== 'gallery') return;
+    setLightbox({ kind: 'gallery', index: (lightbox.index + 1) % galleryImages.length });
+    setReplaceUrl(galleryImages[(lightbox.index + 1) % galleryImages.length]);
   };
 
   // Colors State
@@ -365,6 +417,20 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                       onChange={(e) => setMainImage(e.target.value)}
                     />
                   </div>
+                  {mainImage && (
+                    <button
+                      type="button"
+                      className="main-image-preview"
+                      onClick={() => openLightbox('main', 0)}
+                      title="Ampliar imagen principal"
+                    >
+                      <img src={mainImage} alt="Imagen principal" onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+                      <span>
+                        <ZoomIn size={14} />
+                        Ver imagen principal
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="form-group col-span-2">
@@ -377,9 +443,19 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                   {galleryImages.length > 0 && (
                     <div className="gallery-list">
                       {galleryImages.map((g, i) => (
-                        <div key={i} className="gallery-item">
-                          <img src={g} alt={`Galería ${i + 1}`} className="gallery-thumb" onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
-                          <span className="gallery-url">{g}</span>
+                        <div key={`${g}-${i}`} className="gallery-item">
+                          <button
+                            type="button"
+                            className="gallery-thumb-btn"
+                            onClick={() => openLightbox('gallery', i)}
+                            title="Ampliar imagen"
+                          >
+                            <img src={g} alt={`Galería ${i + 1}`} className="gallery-thumb" onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+                          </button>
+                          <span className="gallery-url" title={g}>{g}</span>
+                          <span className="gallery-copy" title="Ampliar" onClick={() => openLightbox('gallery', i)}>
+                            <ZoomIn size={14} />
+                          </span>
                           <button type="button" className="gallery-remove" onClick={() => handleRemoveGalleryImage(i)} title="Quitar imagen">
                             <Trash2 size={14} />
                           </button>
@@ -749,6 +825,20 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
           flex-shrink: 0;
         }
 
+        .gallery-thumb-btn {
+          padding: 0;
+          border: none;
+          background: none;
+          cursor: zoom-in;
+          display: flex;
+          flex-shrink: 0;
+          transition: opacity var(--transition-fast);
+        }
+
+        .gallery-thumb-btn:hover {
+          opacity: 0.8;
+        }
+
         .gallery-play-icon {
           color: #d32f2f;
           width: 40px;
@@ -1036,7 +1126,285 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
         .btn-publish-wizard {
           padding: 12px 28px;
         }
+
+        /* Lightbox del formulario */
+        .lightbox-backdrop {
+          position: fixed;
+          inset: 0;
+          background-color: rgba(0, 0, 0, 0.75);
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+        }
+
+        .lightbox {
+          background-color: var(--bg-card);
+          border-radius: var(--border-radius-lg);
+          width: 100%;
+          max-width: 640px;
+          max-height: 92vh;
+          padding: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .lightbox-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .lightbox-title {
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--text-dark);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .lightbox-close {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: 1px solid var(--border-color);
+          background: var(--bg-main);
+          color: var(--text-dark);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .lightbox-close:hover {
+          background: #ffebee;
+          color: #c62828;
+        }
+
+        .lightbox-stage {
+          position: relative;
+          background-color: #e8e8e8;
+          border-radius: var(--border-radius-md);
+          min-height: 280px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .lightbox-stage img {
+          max-width: 100%;
+          max-height: 48vh;
+          object-fit: contain;
+          display: block;
+        }
+
+        .lightbox-nav {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(255, 255, 255, 0.9);
+          color: var(--text-dark);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .lightbox-nav.prev {
+          left: 10px;
+        }
+
+        .lightbox-nav.next {
+          right: 10px;
+        }
+
+        .lightbox-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .lightbox-action {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          border-radius: var(--border-radius-pill);
+          border: 1px solid var(--border-color);
+          background: var(--bg-main);
+          color: var(--text-dark);
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .lightbox-action:hover {
+          border-color: var(--text-dark);
+        }
+
+        .lightbox-action.primary {
+          background: #e3f2fd;
+          border-color: #90caf9;
+          color: #1565c0;
+        }
+
+        .lightbox-action.danger {
+          background: #ffebee;
+          border-color: #ffcdd2;
+          color: #c62828;
+        }
+
+        .lightbox-replace {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex: 1;
+          min-width: 220px;
+        }
+
+        .lightbox-replace input {
+          flex: 1;
+          padding: 9px 12px;
+          border-radius: var(--border-radius-sm);
+          border: 1px solid var(--border-color);
+          font-size: 0.8rem;
+          color: var(--text-dark);
+          background: var(--bg-main);
+        }
+
+        .lightbox-replace button {
+          padding: 9px 14px;
+          border-radius: var(--border-radius-pill);
+          border: 1px solid var(--text-dark);
+          background: var(--text-dark);
+          color: #ffffff;
+          font-size: 0.8rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .main-image-preview {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          margin-top: 8px;
+          background-color: var(--bg-main);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-sm);
+          padding: 6px 12px 6px 6px;
+          cursor: zoom-in;
+          transition: all var(--transition-fast);
+        }
+
+        .main-image-preview:hover {
+          border-color: var(--text-dark);
+        }
+
+        .main-image-preview img {
+          width: 42px;
+          height: 42px;
+          border-radius: var(--border-radius-sm);
+          object-fit: contain;
+          background-color: #f5f5f5;
+          border: 1px solid var(--border-color);
+        }
+
+        .main-image-preview span {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: var(--text-muted);
+        }
+
+        .gallery-copy {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-muted);
+          cursor: zoom-in;
+          transition: color var(--transition-fast);
+        }
+
+        .gallery-copy:hover {
+          color: var(--text-dark);
+        }
       `}</style>
+
+      {/* Lightbox ampliado */}
+      {lightbox && (
+        <div className="lightbox-backdrop" onClick={() => setLightbox(null)}>
+          <div className="lightbox animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="lightbox-top">
+              <span className="lightbox-title">
+                <ZoomIn size={15} />
+                {lightbox.kind === 'main'
+                  ? 'Imagen Principal'
+                  : `Foto ${lightbox.index + 1} de ${galleryImages.length}`}
+              </span>
+              <button type="button" className="lightbox-close" onClick={() => setLightbox(null)} title="Cerrar">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="lightbox-stage">
+              {lightbox.kind === 'gallery' && galleryImages.length > 1 && (
+                <button type="button" className="lightbox-nav prev" onClick={lightboxPrev} title="Anterior">
+                  <ChevronLeft size={20} />
+                </button>
+              )}
+              <img
+                key={lightbox.kind === 'gallery' ? galleryImages[lightbox.index] : mainImage}
+                src={lightbox.kind === 'gallery' ? galleryImages[lightbox.index] : mainImage}
+                alt="Vista previa ampliada"
+              />
+              {lightbox.kind === 'gallery' && galleryImages.length > 1 && (
+                <button type="button" className="lightbox-nav next" onClick={lightboxNext} title="Siguiente">
+                  <ChevronRight size={20} />
+                </button>
+              )}
+            </div>
+
+            <div className="lightbox-actions">
+              {lightbox.kind === 'gallery' && (
+                <button type="button" className="lightbox-action primary" onClick={useAsMainFromLightbox} title="Establecer como imagen principal del producto">
+                  <Check size={14} />
+                  Usar como Principal
+                </button>
+              )}
+              <button type="button" className="lightbox-action danger" onClick={removeFromLightbox}>
+                <Trash2 size={14} />
+                {lightbox.kind === 'main' ? 'Quitar principal' : 'Quitar foto'}
+              </button>
+              <div className="lightbox-replace">
+                <input
+                  type="url"
+                  value={replaceUrl}
+                  onChange={(e) => setReplaceUrl(e.target.value)}
+                  placeholder="Cambiar por otra URL..."
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyReplaceFromLightbox(); } }}
+                />
+                <button type="button" onClick={applyReplaceFromLightbox}>
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
