@@ -395,14 +395,20 @@ export const App: React.FC = () => {
             <div className="empty-catalog-box">
               <Sparkles size={36} className="empty-icon" />
               <h3 className="font-heading text-xl">No hay productos en esta selección</h3>
-              <p>Inicia sesión en tu Panel Administrativo para agregar y gestionar productos en el catálogo.</p>
-              <button 
-                className="btn-amazon mt-4" 
-                onClick={() => navigateTo('#admin')}
-              >
-                <PlusCircle size={18} />
-                <span>Ir al Dashboard Admin para Subir Productos</span>
-              </button>
+              {isAdminAuthenticated ? (
+                <>
+                  <p>Agrega y gestiona productos del catálogo desde tu Panel Administrativo.</p>
+                  <button 
+                    className="btn-amazon mt-4" 
+                    onClick={() => navigateTo('#admin')}
+                  >
+                    <PlusCircle size={18} />
+                    <span>Ir al Dashboard Admin para Subir Productos</span>
+                  </button>
+                </>
+              ) : (
+                <p>Vuelve a intentarlo en unos momentos o explora otras colecciones.</p>
+              )}
             </div>
           ) : (
             <div className={`catalog-layout layout-${viewMode}`}>
