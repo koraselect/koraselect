@@ -290,8 +290,8 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
 
         .grid-card-footer {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
+          flex-direction: column;
+          align-items: stretch;
           gap: 10px;
           padding: 12px 16px;
           border-top: 1px solid var(--border-color);
@@ -301,6 +301,8 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
         .grid-card-price {
           display: flex;
           flex-direction: column;
+          align-items: center;
+          text-align: center;
           line-height: 1.1;
         }
 
@@ -320,15 +322,17 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
         .grid-card-actions {
           display: flex;
           align-items: center;
-          gap: 6px;
+          width: 100%;
         }
 
         .grid-buy-btn {
-          padding: 8px 10px;
-          font-size: 0.68rem;
+          width: 100%;
+          padding: 10px 10px;
+          font-size: 0.8rem;
+          justify-content: center;
           line-height: 1.2;
           text-align: center;
-          white-space: normal;
+          white-space: nowrap;
         }
       `}</style>
     </div>

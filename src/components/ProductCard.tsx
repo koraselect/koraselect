@@ -425,17 +425,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         .card-footer {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
           padding-top: 14px;
           border-top: 1px solid var(--border-color);
           margin-top: auto;
-          gap: 12px;
         }
 
         .price-box {
           display: flex;
           flex-direction: column;
+          align-items: center;
+          text-align: center;
         }
 
         .current-price {
@@ -449,13 +451,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           font-size: 0.65rem;
           color: var(--text-light);
           margin-top: 4px;
-          max-width: 150px;
+          max-width: 100%;
           line-height: 1.25;
         }
 
         .product-card .btn-amazon {
-          padding: 10px 14px;
-          font-size: 0.82rem;
+          width: 100%;
+          padding: 12px 14px;
+          font-size: 0.88rem;
+          justify-content: center;
           text-align: center;
         }
       `}</style>
