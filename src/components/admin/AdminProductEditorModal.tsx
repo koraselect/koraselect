@@ -3,6 +3,7 @@ import { Product, Category, ColorOption, ProductHighlight, ProductVideo } from '
 import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle, ZoomIn, Check } from 'lucide-react';
 import { ProductCard } from '../ProductCard';
 import { lookupAmazonProduct } from '../../lib/amazon';
+import { improveAplusCopy } from '../../lib/ai';
 
 interface AdminProductEditorModalProps {
   productToEdit?: Product | null;
@@ -142,6 +143,38 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   // A+ Content State
   const [aPlusTitle, setAPlusTitle] = useState(productToEdit?.aPlusContent?.heroTitle || 'Luxury Design. Made For Real Travel.');
   const [aPlusSubtitle, setAPlusSubtitle] = useState(productToEdit?.aPlusContent?.heroSubtitle || 'Descripción del producto en Amazon');
+
+  // IA para el copy A+ (título / subtítulo)
+  const [copyLoading, setCopyLoading] = useState(false);
+  const [copyError, setCopyError] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState<{ titles: string[]; subtitles: string[]; engine?: string } | null>(null);
+
+  const handleGenerateCopy = async () => {
+    setCopyLoading(true);
+    setCopyError('');
+    try {
+      const res = await improveAplusCopy({
+        product: {
+          title,
+          subtitle,
+          category,
+          badge,
+          price: parseFloat(price) || 0
+        },
+        currentTitle: aPlusTitle,
+        currentSubtitle: aPlusSubtitle
+      });
+      if (!res.success) {
+        setCopyError(res.error || 'No se pudo generar el copy con IA.');
+        return;
+      }
+      setAiSuggestions({ titles: res.titles || [], subtitles: res.subtitles || [], engine: res.engine });
+    } catch (e) {
+      setCopyError(e instanceof Error ? e.message : 'No se pudo generar el copy con IA.');
+    } finally {
+      setCopyLoading(false);
+    }
+  };
 
   // Add Color Handlers
   const handleAddColor = () => {
@@ -619,25 +652,70 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                   </div>
                 </div>
 
-                <div className="form-group col-span-2">
-                  <label>Título A+ Content (Para Modal Desplegable)</label>
+                <div className="aplus-header form-group col-span-2">
+                  <div>
+                    <label>Título A+ Content (Para Modal Desplegable)</label>
+                    <button
+                      type="button"
+                      className="btn-ai-copy"
+                      onClick={handleGenerateCopy}
+                      disabled={copyLoading}
+                      title="Redactar con IA un título y subtítulo atractivos"
+                    >
+                      {copyLoading ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+                      <span>{copyLoading ? 'Redactando con IA...' : 'Redactar con IA'}</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     placeholder="Luxury Design. Made For Real Travel."
                     value={aPlusTitle}
                     onChange={(e) => setAPlusTitle(e.target.value)}
                   />
+                  {aiSuggestions && aiSuggestions.titles.length > 0 && !copyLoading && (
+                    <div className="ai-suggestions">
+                      <span className="ai-suggestions-label">Sugerencias de título:</span>
+                      {aiSuggestions.titles.map((t, i) => (
+                        <button key={i} type="button" className="ai-suggestion" onClick={() => setAPlusTitle(t)} title={t}>
+                          <Sparkles size={12} />
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div className="form-group col-span-2">
-                  <label>Subtítulo o Historia A+ Content</label>
+                <div className="aplus-header form-group col-span-2">
+                  <div>
+                    <label>Subtítulo o Historia A+ Content</label>
+                  </div>
                   <input
                     type="text"
                     placeholder="Descripción del producto en Amazon"
                     value={aPlusSubtitle}
                     onChange={(e) => setAPlusSubtitle(e.target.value)}
                   />
+                  {aiSuggestions && aiSuggestions.subtitles.length > 0 && !copyLoading && (
+                    <div className="ai-suggestions">
+                      <span className="ai-suggestions-label">Sugerencias de subtítulo:</span>
+                      {aiSuggestions.subtitles.map((s, i) => (
+                        <button key={i} type="button" className="ai-suggestion" onClick={() => setAPlusSubtitle(s)} title={s}>
+                          <Sparkles size={12} />
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {copyError && (
+                  <div className="form-group col-span-2">
+                    <p className="form-error-text">
+                      <AlertCircle size={13} />
+                      {copyError}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1341,6 +1419,90 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
 
         .gallery-copy:hover {
           color: var(--text-dark);
+        }
+
+        /* Botón y sugerencias de IA para el copy A+ */
+        .aplus-header {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .btn-ai-copy {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          margin-top: 2px;
+          border-radius: var(--border-radius-pill);
+          border: 1px solid #cfd8dc;
+          background: linear-gradient(90deg, #e8f5e9, #e3f2fd);
+          color: var(--text-dark);
+          font-size: 0.78rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .btn-ai-copy:hover:not(:disabled) {
+          border-color: var(--text-dark);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .btn-ai-copy:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .ai-suggestions {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 2px;
+        }
+
+        .ai-suggestions-label {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .ai-suggestion {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: var(--border-radius-sm);
+          border: 1px solid var(--border-color);
+          background: var(--bg-main);
+          color: var(--text-dark);
+          font-size: 0.8rem;
+          line-height: 1.45;
+          text-align: left;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .ai-suggestion svg {
+          flex-shrink: 0;
+          margin-top: 2px;
+          color: #2e7d32;
+        }
+
+        .ai-suggestion:hover {
+          border-color: #2e7d32;
+          background: #f1f8e9;
+        }
+
+        .form-error-text {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #c62828;
+          font-size: 0.8rem;
+          font-weight: 600;
         }
       `}</style>
 

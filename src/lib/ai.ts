@@ -64,3 +64,52 @@ export const generatePostWithAI = async (
     blocks: result.blocks
   };
 };
+
+export interface AIImproveResult {
+  success: boolean;
+  engine?: 'groq' | 'gemini';
+  titles?: string[];
+  subtitles?: string[];
+  error?: string;
+}
+
+export const improveAplusCopy = async (req: {
+  product: Pick<Product, 'title' | 'subtitle' | 'category' | 'badge' | 'price'> & { brand?: string };
+  currentTitle: string;
+  currentSubtitle: string;
+}): Promise<AIImproveResult> => {
+  const { data, error } = await supabase.functions.invoke('improve-copy', {
+    body: {
+      product: {
+        title: req.product.title,
+        subtitle: req.product.subtitle || '',
+        category: req.product.category || '',
+        badge: req.product.badge || '',
+        brand: req.product.brand || '',
+        price: req.product.price
+      },
+      currentTitle: req.currentTitle,
+      currentSubtitle: req.currentSubtitle
+    }
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  const result = data as { engine?: string; titles?: string[]; subtitles?: string[]; error?: string };
+  if (!result.titles || !result.subtitles) {
+    return {
+      success: false,
+      engine: (result.engine as 'groq' | 'gemini') || 'groq',
+      error: result.error || 'La IA no devolvió sugerencias.'
+    };
+  }
+
+  return {
+    success: true,
+    engine: (result.engine as 'groq' | 'gemini') || 'groq',
+    titles: result.titles,
+    subtitles: result.subtitles
+  };
+};
