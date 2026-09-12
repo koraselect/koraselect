@@ -148,8 +148,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Card Footer: Price & Amazon Affiliate CTA */}
       <div className="card-footer">
         <div className="price-box">
-          <span className="current-price">${product.price.toFixed(2)}</span>
-          <span className="price-disclaimer">El precio y la disponibilidad pueden variar en Amazon.</span>
+          <span className="current-price">Ver precio en Amazon</span>
+          <span className="price-disclaimer">El precio y la disponibilidad los define Amazon al momento de comprar.</span>
         </div>
 
         <a

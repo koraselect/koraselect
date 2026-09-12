@@ -144,7 +144,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="footer-price">
             <span className="label">Precio Amazon:</span>
             <div>
-              <span className="price">${product.price.toFixed(2)}</span>
+              <span className="price">Ver precio actual</span>
               <span className="price-note">El precio y la disponibilidad pueden variar en Amazon.</span>
             </div>
           </div>

@@ -86,8 +86,8 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
       {/* Footer: Price & Buy */}
       <div className="grid-card-footer">
         <div className="grid-card-price">
-          <span className="grid-price-current">${product.price.toFixed(2)}</span>
-          <span className="grid-price-disclaimer">Precio sujeto a cambios en Amazon.</span>
+          <span className="grid-price-current">Ver precio en Amazon</span>
+          <span className="grid-price-disclaimer">Precio y disponibilidad actualizados por Amazon al comprar.</span>
         </div>
         <div className="grid-card-actions">
           <a

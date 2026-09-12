@@ -159,9 +159,9 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
       {/* Footer Bar: Price & CTAs */}
       <div className="aplus-card-footer">
         <div className="aplus-card-price">
-          <span className="aplus-price-label">Precio Amazon:</span>
-          <span className="aplus-price-current">${product.price.toFixed(2)}</span>
-          <span className="aplus-price-note">El precio y la disponibilidad pueden variar en Amazon.</span>
+          <span className="aplus-price-label">Precio:</span>
+          <span className="aplus-price-current">Actual en Amazon</span>
+          <span className="aplus-price-note">El precio y la disponibilidad los define Amazon al momento de comprar.</span>
         </div>
 
         <div className="aplus-card-ctas">
