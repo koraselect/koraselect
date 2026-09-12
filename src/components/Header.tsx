@@ -421,6 +421,23 @@ export const Header: React.FC<HeaderProps> = ({
             width: 100%;
             margin-top: 8px;
           }
+          .btn-admin-login-lock {
+            display: none;
+          }
+          .btn-add-list,
+          .btn-admin-pill,
+          .btn-logout {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
+            justify-content: center;
+          }
+          .btn-add-list span,
+          .btn-admin-pill span,
+          .btn-logout span {
+            display: none;
+          }
         }
       `}</style>
     </header>

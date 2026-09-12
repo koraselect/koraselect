@@ -295,6 +295,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ customBannerText, onExpl
           .value-props {
             align-items: center;
           }
+          .prop-item {
+            width: fit-content;
+            max-width: 100%;
+            justify-content: flex-start;
+            text-align: left;
+          }
           .hero-ctas {
             justify-content: center;
           }
@@ -306,6 +312,18 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ customBannerText, onExpl
           }
           .floating-badge-circle {
             right: 10px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .hero-visual {
+            display: none;
+          }
+          .hero-section {
+            padding: 40px 0 24px 0;
+          }
+          .hero-title {
+            font-size: 2rem;
           }
         }
       `}</style>
