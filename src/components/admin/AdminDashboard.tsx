@@ -654,12 +654,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           font-size: 0.88rem;
         }
 
-        .table-responsive {
+.table-responsive {
           overflow-x: auto;
         }
 
-        .admin-table {
+.admin-table {
           width: 100%;
+          min-width: 820px;
           border-collapse: collapse;
           text-align: left;
         }
@@ -673,6 +674,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           text-transform: uppercase;
           letter-spacing: 0.05em;
           border-bottom: 1px solid var(--border-color);
+          white-space: nowrap;
         }
 
         .admin-table td {
@@ -706,12 +708,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           color: var(--text-muted);
         }
 
-        .price-cell-value {
+.price-cell-value {
           font-weight: 700;
           color: var(--text-dark);
+          white-space: nowrap;
         }
 
-        .amazon-link-pill {
+.amazon-link-pill {
           display: inline-flex;
           align-items: center;
           gap: 4px;
@@ -719,8 +722,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           color: #e68100;
           font-size: 0.78rem;
           font-weight: 600;
-          padding: 4px 10px;
+          padding: 5px 12px;
           border-radius: var(--border-radius-pill);
+          white-space: nowrap;
+          transition: all var(--transition-fast);
+        }
+
+.amazon-link-pill:hover {
+          background-color: #ffe4c4;
+          color: #b45309;
         }
 
         .action-buttons-group {
@@ -737,6 +747,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           display: flex;
           align-items: center;
           gap: 4px;
+          white-space: nowrap;
         }
 
         .action-btn.edit {

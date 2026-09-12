@@ -120,6 +120,7 @@ button {
   font-weight: 600;
   padding: 4px 12px;
   border-radius: var(--border-radius-pill);
+  white-space: nowrap;
 }
 
 .badge-blush {
@@ -129,6 +130,7 @@ button {
   font-weight: 600;
   padding: 4px 12px;
   border-radius: var(--border-radius-pill);
+  white-space: nowrap;
 }
 
 /* Amazon Call-to-action button */
