@@ -1,6 +1,6 @@
-import React from 'react';
-import { Product } from '../types/product';
-import { X, ExternalLink, ShieldCheck, CheckCircle2, Heart, Award, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Product, ProductVideo } from '../types/product';
+import { X, ExternalLink, ShieldCheck, CheckCircle2, Heart, Award, ArrowRight, Play, Image as ImageIcon } from 'lucide-react';
 import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
 interface ProductDetailModalProps {
@@ -10,15 +10,45 @@ interface ProductDetailModalProps {
   onTrackClick: (product: Product) => void;
 }
 
+interface MediaItem {
+  kind: 'image' | 'video';
+  src: string;
+  label: string;
+}
+
+const toEmbedUrl = (url: string): string | null => {
+  const clean = url.trim();
+  const yt =
+    clean.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`;
+  if (/\.mp4(\?|#|$)/i.test(clean)) return null; // video directo
+  return null;
+};
+
+const isDirectVideo = (url: string): boolean => /\.mp4(\?|#|$)/i.test(url.trim());
+
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   product,
   affiliateTag,
   onClose,
   onTrackClick
 }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
   if (!product) return null;
 
   const aPlus = product.aPlusContent;
+
+  const galleryImages = product.galleryImages || [];
+  const videos = product.videos || [];
+
+  const media: MediaItem[] = [
+    { kind: 'image' as const, src: product.mainImage, label: product.title },
+    ...galleryImages.filter((g) => g !== product.mainImage).map((g) => ({ kind: 'image' as const, src: g, label: product.title })),
+    ...videos.map((v) => ({ kind: 'video' as const, src: v.url, label: v.title || 'Video' }))
+  ];
+  const showGallery = media.length > 1;
+  const active = media[Math.min(activeIndex, media.length - 1)];
 
   const handleBuy = (e: React.MouseEvent) => {
     onTrackClick(product);
@@ -134,6 +164,82 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <span className="color-item-name">{c.name}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Module 5: Galería de Fotos y Videos */}
+          {showGallery && (
+            <div className="aplus-module module-gallery">
+              <h4 className="font-heading gallery-title">Galería de Fotos y Videos</h4>
+              <p className="gallery-sub">Explora el producto a detalle</p>
+
+              <div className="gallery-main">
+                {active.kind === 'image' ? (
+                  <img
+                    src={active.src}
+                    alt={active.label}
+                    className="gallery-main-img"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1565026057447-b8899f291105?auto=format&fit=crop&w=1000&q=80';
+                    }}
+                  />
+                ) : isDirectVideo(active.src) ? (
+                  <video key={active.src} src={active.src} controls playsInline className="gallery-main-video" />
+                ) : toEmbedUrl(active.src) ? (
+                  <iframe
+                    key={active.src}
+                    src={toEmbedUrl(active.src) || undefined}
+                    title={active.label}
+                    className="gallery-main-video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="gallery-main-fallback">
+                    <Play size={28} />
+                    <span>{active.label}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="gallery-thumbs">
+                {media.map((item, idx) =>
+                  item.kind === 'image' ? (
+                    <button
+                      key={`img-${idx}-${item.src.slice(0, 40)}`}
+                      type="button"
+                      className={`gallery-thumb-btn ${idx === activeIndex ? 'active' : ''}`}
+                      onClick={() => setActiveIndex(idx)}
+                    >
+                      <img src={item.src} alt={item.label} className="gallery-thumb-img" />
+                    </button>
+                  ) : (
+                    <button
+                      key={`vid-${idx}-${item.src.slice(0, 40)}`}
+                      type="button"
+                      className={`gallery-thumb-btn video ${idx === activeIndex ? 'active' : ''}`}
+                      onClick={() => setActiveIndex(idx)}
+                      title={isDirectVideo(item.src) ? 'Reproducir video' : 'Abrir video'}
+                    >
+                      {isDirectVideo(item.src) || toEmbedUrl(item.src) ? (
+                        <img
+                          src={
+                            isDirectVideo(item.src)
+                              ? undefined
+                              : `https://i.ytimg.com/vi/${toEmbedUrl(item.src)?.match(/embed\/([A-Za-z0-9_-]+)/)?.[1]}/hqdefault.jpg`
+                          }
+                          alt={item.label}
+                          className="gallery-thumb-img"
+                        />
+                      ) : null}
+                      <span className="gallery-thumb-play">
+                        <Play size={14} fill="currentColor" />
+                      </span>
+                    </button>
+                  )
+                )}
               </div>
             </div>
           )}
@@ -484,6 +590,107 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           text-align: center;
         }
 
+        .module-gallery {
+          background-color: var(--bg-card);
+        }
+
+        .gallery-title {
+          text-align: center;
+          font-size: 1.3rem;
+        }
+
+        .gallery-sub {
+          text-align: center;
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          margin-bottom: 18px;
+        }
+
+        .gallery-main {
+          background-color: var(--bg-main);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-md);
+          min-height: 280px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .gallery-main-img {
+          width: 100%;
+          height: 400px;
+          object-fit: contain;
+          display: block;
+        }
+
+        .gallery-main-video {
+          width: 100%;
+          height: 400px;
+          border: none;
+          background-color: #000;
+          display: block;
+        }
+
+        .gallery-main-fallback {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          color: var(--text-muted);
+          padding: 40px;
+          text-align: center;
+        }
+
+        .gallery-thumbs {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          justify-content: center;
+          margin-top: 16px;
+        }
+
+        .gallery-thumb-btn {
+          width: 64px;
+          height: 64px;
+          border-radius: var(--border-radius-sm);
+          border: 2px solid var(--border-color);
+          padding: 0;
+          overflow: hidden;
+          cursor: pointer;
+          position: relative;
+          background-color: var(--bg-main);
+          transition: all var(--transition-fast);
+        }
+
+        .gallery-thumb-btn:hover,
+        .gallery-thumb-btn.active {
+          border-color: #e65100;
+          box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.2);
+        }
+
+        .gallery-thumb-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .gallery-thumb-btn.video .gallery-thumb-img {
+          opacity: 0.85;
+        }
+
+        .gallery-thumb-play {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          background: rgba(0, 0, 0, 0.35);
+        }
+
         @media (max-width: 768px) {
           .aplus-header, .aplus-body, .aplus-footer-bar {
             padding-left: 16px;
@@ -495,6 +702,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           .module-hero-overlay {
             background: rgba(255,255,255,0.92);
             padding: 20px;
+          }
+          .gallery-main-img,
+          .gallery-main-video {
+            height: 260px;
           }
         }
       `}</style>

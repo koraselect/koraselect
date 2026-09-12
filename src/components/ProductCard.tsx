@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '../types/product';
-import { ExternalLink, Star, Eye, Check, Info } from 'lucide-react';
+import { ExternalLink, Star, Eye, Check, Info, Play } from 'lucide-react';
 import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
 interface ProductCardProps {
@@ -33,6 +33,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       : product.mainImage && product.mainImage.trim() !== ''
       ? product.mainImage
       : FALLBACK_IMAGE;
+
+  const galleryCount = (product.galleryImages || []).filter((g) => g !== activeImage).length;
+  const hasVideo = (product.videos || []).length > 0;
 
   const handleBuyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -67,6 +70,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           }}
         />
         
+        {/* Media badges */}
+        {(galleryCount > 0 || hasVideo) && (
+          <div className="media-badges">
+            {galleryCount > 0 && <span className="media-badge photos">+{galleryCount} Fotos</span>}
+            {hasVideo && (
+              <span className="media-badge video">
+                <Play size={10} fill="currentColor" />
+                Vídeo
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Hotspot overlays if available */}
         {product.hotspots && product.hotspots.length > 0 && (
           <div className="hotspots-overlay">
@@ -228,6 +244,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         .card-image-box:hover .card-img {
           transform: scale(1.05);
+        }
+
+.media-badges {
+          position: absolute;
+          bottom: 10px;
+          left: 10px;
+          display: flex;
+          gap: 6px;
+          z-index: 3;
+        }
+
+        .media-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background-color: rgba(0, 0, 0, 0.72);
+          color: #ffffff;
+          font-size: 0.68rem;
+          font-weight: 600;
+          padding: 4px 9px;
+          border-radius: var(--border-radius-pill);
+          backdrop-filter: blur(2px);
+        }
+
+        .media-badge.video {
+          background-color: rgba(211, 47, 47, 0.88);
         }
 
         .quick-view-btn {

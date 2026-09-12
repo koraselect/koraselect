@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Product, Category, ColorOption, ProductHighlight } from '../../types/product';
-import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle } from 'lucide-react';
+import { Product, Category, ColorOption, ProductHighlight, ProductVideo } from '../../types/product';
+import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle } from 'lucide-react';
 import { ProductCard } from '../ProductCard';
 import { lookupAmazonProduct } from '../../lib/amazon';
 
@@ -40,6 +40,35 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   const [asin, setAsin] = useState(productToEdit?.asin || '');
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState('');
+
+  // Galería y Videos State
+  const [galleryImages, setGalleryImages] = useState<string[]>(productToEdit?.galleryImages || []);
+  const [galleryInput, setGalleryInput] = useState('');
+  const [videos, setVideos] = useState<ProductVideo[]>(productToEdit?.videos || []);
+  const [videoUrlInput, setVideoUrlInput] = useState('');
+  const [videoTitleInput, setVideoTitleInput] = useState('');
+
+  const handleAddGalleryImage = () => {
+    if (!galleryInput.trim()) return;
+    const url = galleryInput.trim();
+    if (!galleryImages.includes(url)) setGalleryImages([...galleryImages, url]);
+    setGalleryInput('');
+  };
+
+  const handleRemoveGalleryImage = (idx: number) => {
+    setGalleryImages(galleryImages.filter((_, i) => i !== idx));
+  };
+
+  const handleAddVideo = () => {
+    if (!videoUrlInput.trim()) return;
+    setVideos([...videos, { url: videoUrlInput.trim(), title: videoTitleInput.trim() || undefined }]);
+    setVideoUrlInput('');
+    setVideoTitleInput('');
+  };
+
+  const handleRemoveVideo = (idx: number) => {
+    setVideos(videos.filter((_, i) => i !== idx));
+  };
 
   // Colors State
   const [colors, setColors] = useState<ColorOption[]>(
@@ -101,6 +130,10 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
       if (data.reviewsCount !== null && data.reviewsCount > 0) setReviewsCount(data.reviewsCount.toString());
       if (data.image) setMainImage(data.image);
       if (data.asin) setAsin(data.asin);
+      const extras = (data.images || [])
+        .filter((u: string) => u !== data.image)
+        .filter((u: string) => u.startsWith('http') && !galleryImages.includes(u));
+      if (extras.length > 0) setGalleryImages([...galleryImages, ...extras]);
     } catch (e) {
       setLookupError(e instanceof Error ? e.message : 'No se pudo extraer el producto de Amazon.');
     } finally {
@@ -128,6 +161,8 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
       amazonUrl,
       asin: asin || undefined,
       mainImage: mainImage || 'https://images.unsplash.com/photo-1565026057447-b8899f291105?auto=format&fit=crop&w=1000&q=80',
+      galleryImages: galleryImages.length > 0 ? galleryImages : undefined,
+      videos: videos.length > 0 ? videos : undefined,
       badge: badge || 'A+ Content',
       dimensions,
       capacity,
@@ -166,6 +201,8 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
     reviewsCount: parseInt(reviewsCount, 10) || 24,
     amazonUrl: amazonUrl || 'https://www.amazon.com/',
     mainImage: mainImage || 'https://images.unsplash.com/photo-1565026057447-b8899f291105?auto=format&fit=crop&w=1000&q=80',
+    galleryImages: galleryImages.length > 0 ? galleryImages : undefined,
+    videos: videos.length > 0 ? videos : undefined,
     badge: badge || 'Vista Previa',
     dimensions: dimensions || '19.7 in x 14.6 in',
     capacity,
@@ -329,6 +366,80 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                     />
                   </div>
                 </div>
+
+                <div className="form-group col-span-2">
+                  <label>Galería de Fotos y Videos (opcional)</label>
+                  <p className="helper-text" style={{ marginTop: '-6px', marginBottom: '8px' }}>
+                    El botón "Autorellenar" ya agrega todas las fotos de Amazon. También puedes pegar más imágenes y
+                    videos (YouTube o .mp4) que se muestran al abrir el producto.
+                  </p>
+
+                  {galleryImages.length > 0 && (
+                    <div className="gallery-list">
+                      {galleryImages.map((g, i) => (
+                        <div key={i} className="gallery-item">
+                          <img src={g} alt={`Galería ${i + 1}`} className="gallery-thumb" onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+                          <span className="gallery-url">{g}</span>
+                          <button type="button" className="gallery-remove" onClick={() => handleRemoveGalleryImage(i)} title="Quitar imagen">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="input-with-icon" style={{ marginBottom: '8px' }}>
+                    <Upload size={16} className="input-icon" />
+                    <input
+                      type="url"
+                      placeholder="https://m.media-amazon.com/images/I/... (URL de foto adicional)"
+                      value={galleryInput}
+                      onChange={(e) => setGalleryInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGalleryImage(); } }}
+                    />
+                  </div>
+                  <button type="button" className="btn-add-item" onClick={handleAddGalleryImage}>
+                    <Plus size={14} />
+                    Agregar Imagen
+                  </button>
+
+                  {videos.length > 0 && (
+                    <div className="gallery-list" style={{ marginTop: '8px' }}>
+                      {videos.map((v, i) => (
+                        <div key={i} className="gallery-item">
+                          <PlayCircle size={15} className="gallery-play-icon" />
+                          <div className="gallery-video-info">
+                            <span className="gallery-url">{v.title || v.url}</span>
+                          </div>
+                          <button type="button" className="gallery-remove" onClick={() => handleRemoveVideo(i)} title="Quitar video">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="video-add-row">
+                    <input
+                      type="url"
+                      placeholder="URL del video (YouTube o .mp4)"
+                      value={videoUrlInput}
+                      onChange={(e) => setVideoUrlInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddVideo(); } }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Título (opcional)"
+                      value={videoTitleInput}
+                      onChange={(e) => setVideoTitleInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddVideo(); } }}
+                    />
+                    <button type="button" className="btn-add-item" onClick={handleAddVideo}>
+                      <Plus size={14} />
+                      Agregar Video
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -478,6 +589,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                     <li><strong>Precio Referencial:</strong> {price ? `$${parseFloat(price).toFixed(2)}` : 'No definido (no se publica)'}</li>
                     <li><strong>Link Amazon:</strong> {amazonUrl}</li>
                     <li><strong>Link de Afiliado:</strong> se publica tal cual (sin modificaciones)</li>
+                    <li><strong>Galería:</strong> {galleryImages.length} foto(s) adicional(es) · {videos.length} video(s)</li>
                     <li><strong>Variantes de Color:</strong> {colors.length} seleccionadas</li>
                   </ul>
                 </div>
@@ -608,6 +720,104 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
         .btn-autofill-amazon:disabled {
           opacity: 0.6;
           cursor: wait;
+        }
+
+        .gallery-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 8px;
+        }
+
+        .gallery-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background-color: var(--bg-main);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-sm);
+          padding: 6px 10px;
+        }
+
+        .gallery-thumb {
+          width: 40px;
+          height: 40px;
+          border-radius: var(--border-radius-sm);
+          object-fit: contain;
+          background-color: #f5f5f5;
+          border: 1px solid var(--border-color);
+          flex-shrink: 0;
+        }
+
+        .gallery-play-icon {
+          color: #d32f2f;
+          width: 40px;
+          height: 40px;
+          flex-shrink: 0;
+        }
+
+        .gallery-video-info {
+          overflow: hidden;
+        }
+
+        .gallery-url {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .gallery-remove {
+          margin-left: auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          border: none;
+          background: #ffebee;
+          color: #c62828;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: all var(--transition-fast);
+        }
+
+        .gallery-remove:hover {
+          background: #ffcdd2;
+        }
+
+        .btn-add-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background-color: var(--bg-main);
+          border: 1px dashed var(--border-color);
+          color: var(--text-dark);
+          font-size: 0.8rem;
+          font-weight: 600;
+          padding: 7px 14px;
+          border-radius: var(--border-radius-pill);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .btn-add-item:hover {
+          border-color: var(--text-dark);
+        }
+
+        .video-add-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+          margin-top: 2px;
+        }
+
+        .video-add-row input {
+          flex: 1;
+          min-width: 160px;
         }
 
         .autofill-error {

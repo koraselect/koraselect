@@ -151,6 +151,44 @@ function extractImage(page: string, ld: Record<string, unknown> | null): string 
   return img;
 }
 
+// Devuelve todas las imágenes de la galería del producto (bloque
+// data-a-dynamic-image de la sección de imágenes de Amazon).
+function extractGalleryImages(page: string): string[] {
+  const clean = page.replace(/\\\//g, '/');
+
+  const dyn = clean.match(/data-a-dynamic-image="(\{[^}]*\})/);
+  if (dyn) {
+    try {
+      const map: Record<string, unknown> = JSON.parse(dyn[1]);
+      const keys = Object.keys(map).filter((k) => k.startsWith('http'));
+      if (keys.length > 0) {
+        return keys
+          .sort((a, b) => {
+            const na = Number(a.match(/_SL(\d+)/)?.[1] || 0);
+            const nb = Number(b.match(/_SL(\d+)/)?.[1] || 0);
+            return nb - na;
+          });
+      }
+    } catch {
+      // atributo inválido
+    }
+  }
+
+  // Fallback: recolectar las imágenes hi-res incrustadas en la página.
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const m of clean.matchAll(/https:\/\/m\.media-amazon\.com\/images\/I\/([A-Za-z0-9._-]+)/g)) {
+    const id = m[1].replace(/[)_"',<>&;]+$/, '');
+    if (id.length > 40 || /\.\.\.$/.test(id)) continue;
+    if (!/_SL\d+_\.jpg$/.test(id)) continue;
+    if (!seen.has(id)) {
+      seen.add(id);
+      urls.push(`https://m.media-amazon.com/images/I/${id}`);
+    }
+  }
+  return urls;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -272,6 +310,7 @@ Deno.serve(async (req) => {
         title,
         price,
         image,
+        images: extractGalleryImages(page),
         rating,
         reviewsCount,
       }),

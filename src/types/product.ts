@@ -18,6 +18,12 @@ export interface Hotspot {
   description: string;
 }
 
+export interface ProductVideo {
+  url: string;
+  title?: string;
+  thumbnail?: string;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -31,6 +37,7 @@ export interface Product {
   asin?: string;
   mainImage: string;
   galleryImages?: string[];
+  videos?: ProductVideo[];
   colors?: ColorOption[];
   dimensions?: string;
   capacity?: string;

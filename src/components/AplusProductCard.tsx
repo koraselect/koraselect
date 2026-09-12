@@ -7,7 +7,8 @@ import {
   CheckCircle2,
   Award,
   Layers,
-  Sparkles
+  Sparkles,
+  Play
 } from 'lucide-react';
 import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
@@ -27,6 +28,8 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
   onTrackClick
 }) => {
   const aPlus = product.aPlusContent;
+  const galleryCount = (product.galleryImages || []).filter((g) => g !== product.mainImage).length;
+  const hasVideo = (product.videos || []).length > 0;
 
   const handleBuy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -136,6 +139,17 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
                 (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
               }}
             />
+            {(galleryCount > 0 || hasVideo) && (
+              <div className="aplus-media-badges">
+                {galleryCount > 0 && <span className="media-pill">+{galleryCount} Fotos</span>}
+                {hasVideo && (
+                  <span className="media-pill video">
+                    <Play size={10} fill="currentColor" />
+                    Vídeo
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -427,6 +441,7 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
 
         .aplus-card-arch {
           height: 260px;
+          position: relative;
         }
 
         .aplus-card-arch img {
@@ -436,6 +451,32 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
         }
 
         /* Colors */
+        .aplus-media-badges {
+          position: absolute;
+          bottom: 12px;
+          left: 12px;
+          display: flex;
+          gap: 6px;
+          z-index: 3;
+        }
+
+        .aplus-media-badges .media-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background-color: rgba(0, 0, 0, 0.72);
+          color: #ffffff;
+          font-size: 0.68rem;
+          font-weight: 600;
+          padding: 4px 9px;
+          border-radius: var(--border-radius-pill);
+          backdrop-filter: blur(2px);
+        }
+
+        .aplus-media-badges .media-pill.video {
+          background-color: rgba(211, 47, 47, 0.88);
+        }
+
         .aplus-colors-showcase {
           display: flex;
           justify-content: center;

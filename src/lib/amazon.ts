@@ -6,6 +6,7 @@ export interface AmazonLookupResult {
   title: string;
   price: number | null;
   image: string;
+  images: string[];
   rating: number | null;
   reviewsCount: number | null;
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Product } from '../types/product';
-import { Star, Eye, ExternalLink, Check } from 'lucide-react';
+import { Star, Eye, ExternalLink, Check, Play } from 'lucide-react';
 import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
 interface GridProductCardProps {
@@ -28,6 +28,9 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
       ? product.mainImage
       : FALLBACK_IMAGE;
 
+  const galleryCount = (product.galleryImages || []).filter((g) => g !== activeImage).length;
+  const hasVideo = (product.videos || []).length > 0;
+
   return (
     <div className="grid-card animate-fade-in">
       {/* Image Box with Badge & Rating Overlays */}
@@ -41,6 +44,17 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
             (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
           }}
         />
+        {(galleryCount > 0 || hasVideo) && (
+          <div className="grid-media-badges">
+            {galleryCount > 0 && <span className="media-badge photos">+{galleryCount} Fotos</span>}
+            {hasVideo && (
+              <span className="media-badge video">
+                <Play size={10} fill="currentColor" />
+                Vídeo
+              </span>
+            )}
+          </div>
+        )}
         <div className="grid-card-top">
           {product.badge ? (
             <span className="badge-sage grid-badge">{product.badge}</span>
@@ -178,6 +192,32 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
           font-weight: 400;
           font-size: 0.68rem;
           color: var(--text-muted);
+        }
+
+.grid-media-badges {
+          position: absolute;
+          bottom: 10px;
+          left: 10px;
+          display: flex;
+          gap: 6px;
+          z-index: 3;
+        }
+
+        .grid-media-badges .media-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background-color: rgba(0, 0, 0, 0.72);
+          color: #ffffff;
+          font-size: 0.66rem;
+          font-weight: 600;
+          padding: 4px 9px;
+          border-radius: var(--border-radius-pill);
+          backdrop-filter: blur(2px);
+        }
+
+        .grid-media-badges .media-badge.video {
+          background-color: rgba(211, 47, 47, 0.88);
         }
 
         .grid-pop-open {
