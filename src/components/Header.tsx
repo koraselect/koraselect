@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Search, PlusCircle, Settings, Tag, TrendingUp, Lock, UserCheck, Shield } from 'lucide-react';
+import { ShoppingBag, Search, PlusCircle, Settings, Lock, UserCheck, LogOut } from 'lucide-react';
 import { AffiliateConfig } from '../types/product';
 
 interface HeaderProps {
@@ -9,7 +9,12 @@ interface HeaderProps {
   isAdminAuthenticated: boolean;
   onOpenSettings: () => void;
   onOpenAdmin: () => void;
+  onLogout?: () => void;
   onReturnToStore?: () => void;
+  showSearch?: boolean;
+  activeRoute?: 'store' | 'blog';
+  onNavigateHome?: () => void;
+  onNavigateBlog?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,9 +24,35 @@ export const Header: React.FC<HeaderProps> = ({
   isAdminAuthenticated,
   onOpenSettings,
   onOpenAdmin,
-  onReturnToStore
+  onLogout,
+  onReturnToStore,
+  showSearch = true,
+  activeRoute = 'store',
+  onNavigateHome,
+  onNavigateBlog
 }) => {
   const handleLogoClick = () => {
+    if (onNavigateHome) {
+      onNavigateHome();
+      return;
+    }
+    window.location.hash = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (onReturnToStore) {
+      onReturnToStore();
+    }
+  };
+
+  const handleNavClick = (path: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (path === '/blog' && onNavigateBlog) {
+      onNavigateBlog();
+      return;
+    }
+    if (onNavigateHome) {
+      onNavigateHome();
+      return;
+    }
     window.location.hash = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (onReturnToStore) {
@@ -51,47 +82,54 @@ export const Header: React.FC<HeaderProps> = ({
             <ShoppingBag className="logo-icon" size={22} />
           </div>
           <div>
-            <span className="brand-name font-heading">{affiliateConfig.siteName || 'LUXE COLLAGE'}</span>
-            <span className="brand-tagline">{affiliateConfig.siteTagline || 'Amazon Afiliados A+'}</span>
+            <span className="brand-name font-heading">{affiliateConfig.siteName || 'KORASELECT'}</span>
+            <span className="brand-tagline">{affiliateConfig.siteTagline || 'Ofertas Curadas de Amazon'}</span>
           </div>
         </div>
 
+        {/* Nav Links: Inicio / Blog */}
+        <nav className="header-nav-links">
+          <a
+            href="/"
+            className={`nav-link ${activeRoute === 'store' ? 'active' : ''}`}
+            onClick={handleNavClick('/')}
+            title="Ir a la tienda"
+          >
+            Inicio
+          </a>
+          <a
+            href="/blog"
+            className={`nav-link ${activeRoute === 'blog' ? 'active' : ''}`}
+            onClick={handleNavClick('/blog')}
+            title="Blog, reseñas y guías de compra"
+          >
+            Blog & Guías
+          </a>
+        </nav>
+
         {/* Search Input for Products, Collections, ASIN */}
-        <div className="search-bar">
-          <Search size={18} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Buscar por producto, colección, ASIN (ej: B08X1L9999)..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-          />
-          {searchQuery && (
-            <button className="clear-search" onClick={() => setSearchQuery('')} title="Limpiar búsqueda">
-              ×
-            </button>
-          )}
-        </div>
+        {showSearch && (
+          <div className="search-bar">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Buscar por producto, colección, ASIN (ej: B08X1L9999)..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+            {searchQuery && (
+              <button className="clear-search" onClick={() => setSearchQuery('')} title="Limpiar búsqueda">
+                ×
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Action Controls & Affiliate Badge */}
         <div className="header-actions">
           {/* Conditional Admin vs Regular User Controls */}
           {isAdminAuthenticated ? (
             <>
-              {/* Affiliate Tag Badge (ONLY for Logged-In Admin) */}
-              <div 
-                className="affiliate-tag-chip clickable"
-                onClick={onOpenSettings}
-                title="Abrir Panel Lateral de Configuración para Modificar Tag"
-              >
-                <Tag size={14} className="tag-icon" />
-                <span className="tag-label">TAG:</span>
-                <span className="tag-value">{affiliateConfig.tag}</span>
-                <div className="stat-preview">
-                  <TrendingUp size={13} />
-                  <span>{affiliateConfig.totalClicks} clics</span>
-                </div>
-              </div>
-
               {/* Button visible ONLY for Logged-In Admin users */}
               <button 
                 className="btn-add-list admin-active-btn" 
@@ -118,6 +156,16 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Abrir Panel Lateral de Configuración (Admin)"
               >
                 <Settings size={20} />
+              </button>
+
+              {/* Logout Button */}
+              <button 
+                className="btn-logout" 
+                onClick={onLogout} 
+                title="Cerrar sesión de administrador"
+              >
+                <LogOut size={15} />
+                <span>Salir</span>
               </button>
             </>
           ) : (
@@ -219,6 +267,33 @@ export const Header: React.FC<HeaderProps> = ({
           pointer-events: none;
         }
 
+        .header-nav-links {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .nav-link {
+          padding: 8px 14px;
+          border-radius: var(--border-radius-pill);
+          font-size: 0.88rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          text-decoration: none;
+          transition: all var(--transition-fast);
+        }
+
+        .nav-link:hover {
+          color: var(--text-dark);
+          background-color: var(--bg-card);
+        }
+
+        .nav-link.active {
+          color: var(--text-dark);
+          background-color: #ffffff;
+          box-shadow: var(--shadow-sm);
+        }
+
         .clear-search {
           position: absolute;
           right: 14px;
@@ -230,53 +305,6 @@ export const Header: React.FC<HeaderProps> = ({
           display: flex;
           align-items: center;
           gap: 10px;
-        }
-
-        .affiliate-tag-chip {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background-color: var(--bg-card);
-          border: 1px solid var(--border-color);
-          padding: 8px 16px;
-          border-radius: var(--border-radius-pill);
-          font-size: 0.85rem;
-          transition: all var(--transition-fast);
-        }
-
-        .affiliate-tag-chip:hover {
-          border-color: var(--color-amazon);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .tag-icon {
-          color: var(--color-amazon);
-        }
-
-        .tag-label {
-          font-weight: 500;
-          color: var(--text-muted);
-          font-size: 0.75rem;
-        }
-
-        .tag-value {
-          font-weight: 700;
-          color: var(--text-dark);
-          background: #fff3e0;
-          padding: 2px 8px;
-          border-radius: 6px;
-        }
-
-        .stat-preview {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          margin-left: 6px;
-          padding-left: 8px;
-          border-left: 1px solid var(--border-color);
-          font-size: 0.75rem;
-          color: #2e7d32;
-          font-weight: 600;
         }
 
         .btn-add-list {
@@ -353,18 +381,39 @@ export const Header: React.FC<HeaderProps> = ({
           border-color: var(--text-dark);
         }
 
+        .btn-logout {
+          background-color: #fff3e0;
+          border: 1px solid #ffcc80;
+          color: #e65100;
+          font-size: 0.82rem;
+          font-weight: 600;
+          padding: 9px 16px;
+          border-radius: var(--border-radius-pill);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all var(--transition-fast);
+        }
+
+        .btn-logout:hover {
+          background-color: #ffe0b2;
+          border-color: #e65100;
+        }
+
         @media (max-width: 900px) {
           .header-container {
             flex-wrap: wrap;
           }
-          .search-bar {
+          .header-nav-links {
             order: 3;
+            width: 100%;
+            justify-content: center;
+          }
+          .search-bar {
+            order: 4;
             max-width: 100%;
             width: 100%;
             margin-top: 8px;
-          }
-          .stat-preview {
-            display: none;
           }
         }
       `}</style>

@@ -1,7 +1,20 @@
 import React from 'react';
-import { ShoppingBag, ShieldCheck, Heart, ExternalLink, Lock } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Heart, ExternalLink, Lock, Newspaper } from 'lucide-react';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onNavigate?: (path: string) => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+  const goTo = (path: string) => {
+    if (onNavigate) {
+      onNavigate(path);
+    } else {
+      window.location.hash = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <footer className="footer-section">
       <div className="container footer-container">
@@ -9,20 +22,17 @@ export const Footer: React.FC = () => {
           <div className="footer-brand">
             <div 
               className="brand-logo mb-2" 
-              onClick={() => {
-                window.location.hash = '';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={() => goTo('/')}
               style={{ cursor: 'pointer' }}
               title="Ir al inicio de la Portada Principal"
             >
               <div className="logo-icon-wrapper">
                 <ShoppingBag size={20} />
               </div>
-              <span className="brand-name font-heading">LUXE COLLAGE</span>
+              <span className="brand-name font-heading">KORASELECT</span>
             </div>
             <p className="footer-tagline">
-              Plataforma de Curaduría Editorial de Productos en Amazon Afiliados con Estética A+ Premium.
+              Curaduría de productos disponibles en Amazon, organizados por categorías para ayudarte a elegir mejor.
             </p>
           </div>
 
@@ -30,19 +40,30 @@ export const Footer: React.FC = () => {
             <div className="link-group">
               <h5 className="group-title font-heading">Colecciones</h5>
               <ul>
-                <li><a href="#viaje">Viaje Familiar & Equipaje</a></li>
-                <li><a href="#bebe">Maternidad & Bebé Lux</a></li>
-                <li><a href="#hogar">Hogar Minimalista</a></li>
-                <li><a href="#gadgets">Tecnología & Gadgets</a></li>
+                <li><a href="#maletas" onClick={(e) => { e.preventDefault(); goTo('/'); }}>Maletas y Equipaje</a></li>
+                <li><a href="#botellas" onClick={(e) => { e.preventDefault(); goTo('/'); }}>Botellas y Termos</a></li>
+                <li><a href="#estuches" onClick={(e) => { e.preventDefault(); goTo('/'); }}>Estuches y Neceseres</a></li>
+                <li><a href="#organizacion" onClick={(e) => { e.preventDefault(); goTo('/'); }}>Organización</a></li>
               </ul>
             </div>
 
             <div className="link-group">
-              <h5 className="group-title font-heading">Afiliación & Gestión</h5>
+              <h5 className="group-title font-heading">Contenido</h5>
               <ul>
-                <li><a href="https://affiliate-program.amazon.com/" target="_blank" rel="noreferrer">Amazon Associates Portal <ExternalLink size={12} /></a></li>
-                <li><a href="#admin" style={{ fontWeight: 600, color: 'var(--text-dark)' }}><Lock size={12} /> Acceso Panel Admin</a></li>
-                <li><a href="#politica">Divulgación de Regalías</a></li>
+                <li>
+                  <a href="/blog" onClick={(e) => { e.preventDefault(); goTo('/blog'); }}><Newspaper size={12} /> Blog & Guías de Compra</a>
+                </li>
+                <li><a href="https://affiliate-program.amazon.com/" target="_blank" rel="noopener noreferrer">Amazon Associates Portal <ExternalLink size={12} /></a></li>
+              </ul>
+            </div>
+
+            <div className="link-group">
+              <h5 className="group-title font-heading">Legal & Políticas</h5>
+              <ul>
+                <li><a href="https://www.amazon.com/ConditionsOfUse" target="_blank" rel="noopener noreferrer">Condiciones de Uso de Amazon <ExternalLink size={12} /></a></li>
+                <li><a href="https://www.amazon.com/privacy" target="_blank" rel="noopener noreferrer">Política de Privacidad de Amazon <ExternalLink size={12} /></a></li>
+                <li><a href="https://affiliate-program.amazon.com/" target="_blank" rel="noopener noreferrer">Programa de Afiliados <ExternalLink size={12} /></a></li>
+                <li><a href="#admin" onClick={(e) => { e.preventDefault(); goTo('#admin'); }} style={{ fontWeight: 600, color: 'var(--text-dark)' }}><Lock size={12} /> Acceso Panel Admin</a></li>
               </ul>
             </div>
           </div>
@@ -52,12 +73,12 @@ export const Footer: React.FC = () => {
         <div className="amazon-disclosure-box">
           <ShieldCheck size={18} className="disclosure-icon" />
           <p>
-            <strong>Divulgación de Afiliado de Amazon:</strong> LUXE COLLAGE participa en el Programa de Afiliados de Amazon Services LLC, un programa de publicidad para afiliados diseñado para ofrecer a sitios web un modo de obtener comisiones por publicidad, publicitando e incluyendo enlaces a Amazon.com y sitios afiliados. Como Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables.
+            <strong>Divulgación de Afiliado:</strong> <strong>KORASELECT</strong> participa en el Programa de Afiliados de Amazon Services LLC, un programa de publicidad para afiliados diseñado para ofrecer a sitios web un modo de obtener comisiones por publicidad, publicitando e incluyendo enlaces a Amazon.com y sitios afiliados. Como Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables.
           </p>
         </div>
 
         <div className="footer-bottom">
-          <span>&copy; {new Date().getFullYear()} LUXE COLLAGE. Todos los derechos reservados.</span>
+          <span>&copy; {new Date().getFullYear()} KORASELECT. Todos los derechos reservados.</span>
           <span className="crafted-with">
             Diseñado con <Heart size={14} fill="#e53935" stroke="#e53935" /> para Creadores de Amazon Afiliados
           </span>

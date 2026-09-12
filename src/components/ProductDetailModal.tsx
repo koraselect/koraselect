@@ -1,6 +1,7 @@
 import React from 'react';
 import { Product } from '../types/product';
 import { X, ExternalLink, ShieldCheck, CheckCircle2, Heart, Award, ArrowRight } from 'lucide-react';
+import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -19,19 +20,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const aPlus = product.aPlusContent;
 
-  const getAffiliateUrl = (baseUrl: string) => {
-    try {
-      const url = new URL(baseUrl);
-      url.searchParams.set('tag', affiliateTag);
-      return url.toString();
-    } catch {
-      return `${baseUrl}?tag=${affiliateTag}`;
-    }
-  };
-
-  const handleBuy = () => {
+  const handleBuy = (e: React.MouseEvent) => {
     onTrackClick(product);
-    window.open(getAffiliateUrl(product.amazonUrl), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -44,7 +34,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
         {/* Modal Top Header */}
         <div className="aplus-header">
-          <span className="badge-premium">A+ Premium Amazon Content</span>
+          <span className="badge-premium">KORASELECT Selection</span>
           <h2 className="aplus-title font-heading">{product.title}</h2>
           <p className="aplus-subtitle">{product.subtitle}</p>
         </div>
@@ -62,7 +52,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               }}
             />
             <div className="module-hero-overlay">
-              <span className="hero-brand-tag font-heading">A+ Premium Selection</span>
+              <span className="hero-brand-tag font-heading">KORASELECT Selection</span>
               <h3 className="hero-heading font-heading">
                 {aPlus?.heroTitle || 'Luxury Design. Made For Real Travel.'}
               </h3>
@@ -134,7 +124,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {/* Module 4: Color Collection Swatches (matching Image 1 & 2 bottom) */}
           {product.colors && product.colors.length > 0 && (
             <div className="aplus-module module-colors">
-              <h4 className="font-heading colors-title">Premium Color Collection</h4>
+              <h4 className="font-heading colors-title">Colores Destacados</h4>
               <p className="colors-sub">Modern colors for every family journey</p>
 
               <div className="colors-showcase">
@@ -153,14 +143,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div className="aplus-footer-bar">
           <div className="footer-price">
             <span className="label">Precio Amazon:</span>
-            <span className="price">${product.price.toFixed(2)}</span>
+            <div>
+              <span className="price">${product.price.toFixed(2)}</span>
+              <span className="price-note">El precio y la disponibilidad pueden variar en Amazon.</span>
+            </div>
           </div>
 
           <div className="footer-ctas">
-            <button className="btn-amazon buy-modal-btn" onClick={handleBuy}>
-              <span>Comprar en Amazon</span>
+            <a
+              className="btn-amazon buy-modal-btn"
+              href={getAffiliateUrl(product.amazonUrl, affiliateTag)}
+              target="_blank"
+              rel={AMAZON_REL}
+              onClick={handleBuy}
+            >
+              <span>{AMAZON_CTA_TEXT}</span>
               <ExternalLink size={16} />
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -470,6 +469,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           font-size: 1.5rem;
           font-weight: 700;
           color: var(--text-dark);
+          line-height: 1;
+        }
+
+        .footer-price .price-note {
+          display: block;
+          font-size: 0.68rem;
+          color: var(--text-muted);
+          margin-top: 3px;
+        }
+
+        .footer-ctas .buy-modal-btn {
+          white-space: normal;
+          text-align: center;
         }
 
         @media (max-width: 768px) {

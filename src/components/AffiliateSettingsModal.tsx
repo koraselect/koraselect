@@ -19,9 +19,9 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
   const [tag, setTag] = useState(config.tag || 'neostore-20');
   const [currency, setCurrency] = useState(config.currency || 'USD');
   const [commissionRate, setCommissionRate] = useState(config.defaultCommissionRate ? config.defaultCommissionRate.toString() : '6.0');
-  const [siteName, setSiteName] = useState(config.siteName || 'LUXE COLLAGE');
-  const [siteTagline, setSiteTagline] = useState(config.siteTagline || 'Amazon Afiliados A+ Premium Selection');
-  const [customBannerText, setCustomBannerText] = useState(config.customBannerText || 'Selección Curada de Amazon Afiliados');
+  const [siteName, setSiteName] = useState(config.siteName || 'KORASELECT');
+  const [siteTagline, setSiteTagline] = useState(config.siteTagline || 'Ofertas Curadas de Amazon');
+  const [customBannerText, setCustomBannerText] = useState(config.customBannerText || 'Selección Curada de Amazon');
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
@@ -47,8 +47,8 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
       tag: tag.trim(),
       currency,
       defaultCommissionRate: parseFloat(commissionRate) || 6.0,
-      siteName: siteName.trim() || 'LUXE COLLAGE',
-      siteTagline: siteTagline.trim() || 'Amazon Afiliados A+',
+      siteName: siteName.trim() || 'KORASELECT',
+      siteTagline: siteTagline.trim() || 'Ofertas Curadas de Amazon',
       customBannerText: customBannerText.trim()
     });
 
@@ -196,7 +196,7 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
                   <label>Nombre de la Tienda / Marca *</label>
                   <input
                     type="text"
-                    placeholder="LUXE COLLAGE"
+                    placeholder="KORASELECT"
                     value={siteName}
                     onChange={(e) => setSiteName(e.target.value)}
                     required

@@ -33,7 +33,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   const [reviewsCount, setReviewsCount] = useState(productToEdit?.reviewsCount ? productToEdit.reviewsCount.toString() : '24');
   const [amazonUrl, setAmazonUrl] = useState(productToEdit?.amazonUrl || '');
   const [mainImage, setMainImage] = useState(productToEdit?.mainImage || '');
-  const [badge, setBadge] = useState(productToEdit?.badge || 'A+ Premium');
+  const [badge, setBadge] = useState(productToEdit?.badge || 'Top Seller');
   const [dimensions, setDimensions] = useState(productToEdit?.dimensions || '');
   const [capacity, setCapacity] = useState(productToEdit?.capacity || '');
 
@@ -56,7 +56,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
 
   // A+ Content State
   const [aPlusTitle, setAPlusTitle] = useState(productToEdit?.aPlusContent?.heroTitle || 'Luxury Design. Made For Real Travel.');
-  const [aPlusSubtitle, setAPlusSubtitle] = useState(productToEdit?.aPlusContent?.heroSubtitle || 'Equipaje prémium diseñado para familias modernas');
+  const [aPlusSubtitle, setAPlusSubtitle] = useState(productToEdit?.aPlusContent?.heroSubtitle || 'Descripción del producto en Amazon');
 
   // Add Color Handlers
   const handleAddColor = () => {
@@ -249,7 +249,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                   <label>Etiqueta / Badge</label>
                   <input
                     type="text"
-                    placeholder="A+ Premium, Best Seller"
+                    placeholder="Top Seller, Best Seller"
                     value={badge}
                     onChange={(e) => setBadge(e.target.value)}
                   />
@@ -398,7 +398,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                   <label>Subtítulo o Historia A+ Content</label>
                   <input
                     type="text"
-                    placeholder="Equipaje prémium diseñado para familias modernas"
+                    placeholder="Descripción del producto en Amazon"
                     value={aPlusSubtitle}
                     onChange={(e) => setAPlusSubtitle(e.target.value)}
                   />

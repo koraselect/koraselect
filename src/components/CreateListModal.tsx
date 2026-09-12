@@ -25,7 +25,7 @@ export const CreateListModal: React.FC<CreateListModalProps> = ({
   const [price, setPrice] = useState('');
   const [amazonUrl, setAmazonUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [badge, setBadge] = useState('A+ Premium');
+  const [badge, setBadge] = useState('Top Seller');
   const [dimensions, setDimensions] = useState('');
   const [highlight1, setHighlight1] = useState('');
   const [highlight2, setHighlight2] = useState('');
@@ -90,7 +90,7 @@ export const CreateListModal: React.FC<CreateListModalProps> = ({
       description: `${title} - ${subtitle}`,
       aPlusContent: {
         heroTitle: title,
-        heroSubtitle: subtitle || 'Selección de calidad prémium en Amazon.',
+        heroSubtitle: subtitle || 'Selección de calidad destacada en Amazon.',
         bannerImage: imageUrl || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80',
         features: [
           { title: 'Estilo & Calidad', desc: 'Materiales seleccionados con la más alta durabilidad.', icon: 'Check' }
@@ -98,7 +98,7 @@ export const CreateListModal: React.FC<CreateListModalProps> = ({
         whyChoose: [
           'Calificación de 5 estrellas en Amazon',
           'Envío rápido Prime disponible',
-          'Inclusión garantizada en listas A+ Premium'
+          'Inclusión garantizada en listas de nuestra selección'
         ]
       }
     };
@@ -241,7 +241,7 @@ export const CreateListModal: React.FC<CreateListModalProps> = ({
                 <label>Etiqueta / Badge</label>
                 <input
                   type="text"
-                  placeholder="Ej: A+ Premium, Best Seller"
+                  placeholder="Ej: Top Seller, Best Seller"
                   value={badge}
                   onChange={(e) => setBadge(e.target.value)}
                 />

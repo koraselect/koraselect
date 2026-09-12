@@ -2,13 +2,11 @@ import React from 'react';
 import { ArrowDownRight, Award, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface HeroBannerProps {
-  isAdminAuthenticated: boolean;
   customBannerText?: string;
   onExploreClick: () => void;
-  onOpenAdmin: () => void;
 }
 
-export const HeroBanner: React.FC<HeroBannerProps> = ({ isAdminAuthenticated, customBannerText, onExploreClick, onOpenAdmin }) => {
+export const HeroBanner: React.FC<HeroBannerProps> = ({ customBannerText, onExploreClick }) => {
   return (
     <section className="hero-section">
       <div className="container hero-grid">
@@ -16,41 +14,46 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ isAdminAuthenticated, cu
         <div className="hero-content">
           <div className="badge-premium mb-4">
             <Sparkles size={14} className="text-amber-400" />
-            <span>{customBannerText || 'Selección Curada de Amazon Afiliados'}</span>
+            <span>{customBannerText || 'Selección Curada de Amazon'}</span>
           </div>
 
           <h1 className="hero-title font-heading">
-            Catálogo Editorial <br /> & Collage por Categorías
+            Selección Curada de <br /> Productos en Amazon
           </h1>
 
           <p className="hero-subtitle">
-            Crea, sube y comparte listas de productos con formato <strong>A+ Premium Content</strong>. 
-            Maximiza tus conversión de regalías en Amazon convirtiendo listas convencionales en vitrinas visuales irresistibles.
+            Los mejores productos y recomendaciones seleccionadas para ti.
           </p>
 
-          {/* Key Value Props (Directly inspired by Image 4 specifications) */}
+          <p className="hero-subtitle">
+            En <strong>KORASELECT</strong> curamos los mejores productos disponibles en Amazon 
+            para ayudarte a elegir calidad, ahorrar tiempo y tomar decisiones informadas.
+          </p>
+
+          {/* Value Props para el visitante */}
           <div className="value-props">
             <div className="prop-item">
               <CheckCircle2 size={18} className="prop-icon" />
-              <span><strong>Luxury Positioning:</strong> Estética prémium minimalista</span>
+              <span><strong>Selección Organizada:</strong> Hogar, viajes, tecnología y más.</span>
             </div>
             <div className="prop-item">
               <CheckCircle2 size={18} className="prop-icon" />
-              <span><strong>Tag Automático:</strong> Inserción de tu código de regalia</span>
+              <span><strong>Gana Tiempo:</strong> Encontramos las mejores opciones y guías por ti.</span>
             </div>
             <div className="prop-item">
               <CheckCircle2 size={18} className="prop-icon" />
-              <span><strong>Vistas A+ Content:</strong> Despiece interactivo de atributos</span>
+              <span><strong>Disponibilidad Real:</strong> Verificación de disponibilidad y precios en tiempo real en Amazon.</span>
+            </div>
+            <div className="prop-item">
+              <CheckCircle2 size={18} className="prop-icon" />
+              <span><strong>Picks Destacados:</strong> Actualizaciones frecuentes con recomendaciones para tu día a día.</span>
             </div>
           </div>
 
           <div className="hero-ctas">
             <button className="btn-editorial hero-btn-main" onClick={onExploreClick}>
-              <span>Explorar Collages</span>
+              <span>Explorar Selección</span>
               <ArrowDownRight size={18} />
-            </button>
-            <button className="btn-secondary-hero" onClick={onOpenAdmin} title="Inicia sesión en el Panel Admin para subir tus listas">
-              <span>{isAdminAuthenticated ? '+ Subir Lista en Dashboard' : 'Acceso Creadores / Admin'}</span>
             </button>
           </div>
         </div>
@@ -61,13 +64,13 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ isAdminAuthenticated, cu
             {/* Arched image container */}
             <div className="hero-arch-container arch-frame">
               <img
-                src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80"
-                alt="Rainro & Co Family Travel"
+                src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1000&q=80"
+                alt="Selección de productos lifestyle"
                 className="hero-img"
               />
               <div className="hero-overlay-badge">
                 <Award size={16} />
-                <span>Featured Collection: Rainro & Co</span>
+                <span>Picks Destacados del Mes</span>
               </div>
             </div>
 
@@ -79,15 +82,15 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ isAdminAuthenticated, cu
                 <span className="pill-dot blush" title="Whisper Blush"></span>
               </div>
               <div className="spec-text">
-                <div className="spec-title">Premium Color Collection</div>
-                <div className="spec-sub">Modern colors for every journey</div>
+                <div className="spec-title">Picks Destacados</div>
+                <div className="spec-sub">Recomendaciones para la vida diaria</div>
               </div>
             </div>
 
             {/* Floating Feature Circle */}
             <div className="floating-badge-circle">
               <ShieldCheck size={20} />
-              <div className="circle-text">Wheel Brake System</div>
+              <div className="circle-text">Selección Curada</div>
             </div>
           </div>
         </div>
@@ -156,24 +159,6 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ isAdminAuthenticated, cu
         .hero-btn-main {
           padding: 14px 28px;
           font-size: 1rem;
-        }
-
-        .btn-secondary-hero {
-          background-color: var(--bg-card);
-          border: 1px solid var(--border-color);
-          color: var(--text-dark);
-          font-weight: 600;
-          font-size: 0.95rem;
-          padding: 14px 24px;
-          border-radius: var(--border-radius-pill);
-          transition: all var(--transition-fast);
-        }
-
-        .btn-secondary-hero:hover {
-          border-color: var(--text-dark);
-          background-color: #ffffff;
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-sm);
         }
 
         /* Right side visuals */

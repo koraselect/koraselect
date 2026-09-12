@@ -1,6 +1,7 @@
 import React from 'react';
 import { Product } from '../types/product';
 import { Star, Eye, ExternalLink, Check } from 'lucide-react';
+import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
 interface GridProductCardProps {
   product: Product;
@@ -17,20 +18,9 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
   onOpenDetailModal,
   onTrackClick
 }) => {
-  const getAffiliateUrl = (baseUrl: string) => {
-    try {
-      const url = new URL(baseUrl);
-      url.searchParams.set('tag', affiliateTag);
-      return url.toString();
-    } catch {
-      return `${baseUrl}?tag=${affiliateTag}`;
-    }
-  };
-
   const handleBuyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onTrackClick(product);
-    window.open(getAffiliateUrl(product.amazonUrl), '_blank', 'noopener,noreferrer');
   };
 
   const activeImage =
@@ -97,18 +87,19 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
       <div className="grid-card-footer">
         <div className="grid-card-price">
           <span className="grid-price-current">${product.price.toFixed(2)}</span>
-          {product.originalPrice && (
-            <span className="grid-price-original">${product.originalPrice.toFixed(2)}</span>
-          )}
+          <span className="grid-price-disclaimer">Precio sujeto a cambios en Amazon.</span>
         </div>
         <div className="grid-card-actions">
-          <button
+          <a
             className="btn-amazon grid-buy-btn"
+            href={getAffiliateUrl(product.amazonUrl, affiliateTag)}
+            target="_blank"
+            rel={AMAZON_REL}
             onClick={handleBuyClick}
           >
-            <span>Comprar</span>
+            <span>{AMAZON_CTA_TEXT}</span>
             <ExternalLink size={14} />
-          </button>
+          </a>
         </div>
       </div>
 
@@ -279,11 +270,11 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
           color: var(--text-dark);
         }
 
-        .grid-price-original {
-          font-size: 0.7rem;
+        .grid-price-disclaimer {
+          font-size: 0.6rem;
           color: var(--text-light);
-          text-decoration: line-through;
           margin-top: 2px;
+          line-height: 1.2;
         }
 
         .grid-card-actions {
@@ -293,8 +284,11 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
         }
 
         .grid-buy-btn {
-          padding: 8px 14px;
-          font-size: 0.8rem;
+          padding: 8px 10px;
+          font-size: 0.68rem;
+          line-height: 1.2;
+          text-align: center;
+          white-space: normal;
         }
       `}</style>
     </div>

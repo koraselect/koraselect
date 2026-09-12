@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { Product, Category, AffiliateConfig } from '../../types/product';
+import { BlogPost } from '../../types/blog';
 import { AdminProductEditorModal } from './AdminProductEditorModal';
 import { ConfirmActionModal } from './ConfirmActionModal';
+import { BlogManager } from './BlogManager';
 import { 
   ShoppingBag, Plus, Search, Edit3, Trash2, ExternalLink, 
   MousePointerClick, DollarSign, Tag, LogOut, ArrowUpRight,
-  Copy, RotateCcw, Check, Layers, AlertCircle
+  Copy, RotateCcw, Check, Layers, AlertCircle, Newspaper
 } from 'lucide-react';
+
+type AdminTab = 'products' | 'blog';
 
 interface AdminDashboardProps {
   products: Product[];
@@ -19,6 +23,9 @@ interface AdminDashboardProps {
   onOpenSettings: () => void;
   onLogout: () => void;
   onReturnToStore: () => void;
+  blogPosts: BlogPost[];
+  onSaveBlogPost: (post: BlogPost) => void;
+  onDeleteBlogPost: (slug: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -31,8 +38,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onResetDefaultCatalog,
   onOpenSettings,
   onLogout,
-  onReturnToStore
+  onReturnToStore,
+  blogPosts,
+  onSaveBlogPost,
+  onDeleteBlogPost
 }) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>('products');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -209,9 +220,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="metric-label">Amazon Tracking Tag Activo</div>
             </div>
           </div>
+
+          <div className="metric-card clickable" onClick={() => setActiveTab('blog')} title="Ir a Gestión del Blog">
+            <div className="metric-icon-box blog">
+              <Newspaper size={22} />
+            </div>
+            <div className="metric-data">
+              <div className="metric-num">{blogPosts.length}</div>
+              <div className="metric-label">Entradas de Blog Publicadas</div>
+            </div>
+          </div>
         </div>
 
-        {/* Toolbar & Product Table Section */}
+        {/* Tab Switcher */}
+        <div className="admin-tabs">
+          <button
+            className={`admin-tab ${activeTab === 'products' ? 'active' : ''}`}
+            onClick={() => setActiveTab('products')}
+          >
+            <Layers size={16} />
+            <span>Catálogo de Productos</span>
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'blog' ? 'active' : ''}`}
+            onClick={() => setActiveTab('blog')}
+          >
+            <Newspaper size={16} />
+            <span>Blog & Guías</span>
+            <span className="admin-tab-count">{blogPosts.length}</span>
+          </button>
+        </div>
+
+        {/* Tab: Productos */}
+        {activeTab === 'products' && (
         <div className="table-wrapper-card">
           <div className="table-toolbar">
             <div>
@@ -351,6 +392,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </table>
           </div>
         </div>
+        )}
+
+        {/* Tab: Blog */}
+        {activeTab === 'blog' && (
+          <BlogManager
+            posts={blogPosts}
+            products={products}
+            onSavePost={(post) => {
+              onSaveBlogPost(post);
+            }}
+            onDeletePost={onDeleteBlogPost}
+          />
+        )}
       </main>
 
       {/* Editor Modal */}
@@ -720,6 +774,76 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           text-align: center;
           padding: 40px !important;
           color: var(--text-muted);
+        }
+
+        .admin-tabs {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 24px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 0;
+        }
+
+        .admin-tab {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 18px;
+          border-radius: var(--border-radius-pill) var(--border-radius-pill) 0 0;
+          background: transparent;
+          color: var(--text-muted);
+          font-size: 0.88rem;
+          font-weight: 600;
+          border: 1px solid transparent;
+          border-bottom: none;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .admin-tab:hover {
+          color: var(--text-dark);
+          background-color: var(--bg-card);
+        }
+
+        .admin-tab.active {
+          background-color: var(--bg-card);
+          border-color: var(--border-color);
+          border-bottom: 2px solid var(--text-dark);
+          color: var(--text-dark);
+        }
+
+        .admin-tab-count {
+          background-color: var(--text-dark);
+          color: #fff;
+          font-size: 0.7rem;
+          font-weight: 700;
+          min-width: 20px;
+          height: 20px;
+          padding: 0 6px;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .metric-card.clickable {
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .metric-card.clickable:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+
+        .metric-icon-box.blog {
+          background-color: #ede7f6;
+          color: #5e35b1;
+        }
+
+        .icon-circle.delete {
+          background-color: #ffebee;
+          color: #c62828;
         }
       `}</style>
     </div>

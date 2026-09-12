@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Lock, User, Key, ShoppingBag, ArrowLeft, ShieldAlert, Sparkles } from 'lucide-react';
+import { Lock, User, Key, ShoppingBag, ArrowLeft, ShieldAlert, Loader2 } from 'lucide-react';
+import { verifyAdmin } from '../../lib/db';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -10,19 +11,29 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleQuickFill = () => {
-    setUsername('admin');
-    setPassword('neostore2026');
-    setError('');
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'neostore2026') {
-      onLoginSuccess();
-    } else {
-      setError('Credenciales incorrectas. Pruebe usuario: admin | contraseña: neostore2026');
+    if (!username.trim() || !password) {
+      setError('Ingresa tu usuario y contraseña.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const ok = await verifyAdmin(username, password);
+      if (ok) {
+        onLoginSuccess();
+      } else {
+        setError('Credenciales incorrectas. Verifica el usuario y la contraseña.');
+      }
+    } catch (err) {
+      console.error('Error verificando admin:', err);
+      setError('No se pudo conectar con el servidor de autenticación. Intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -40,22 +51,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
             <ShoppingBag size={24} />
           </div>
           <h1 className="login-title font-heading">Portal Administrativo</h1>
-          <p className="login-sub">Gestión de Productos & Colecciones de Amazon Afiliados</p>
-        </div>
-
-        {/* Suggested credentials badge */}
-        <div className="credentials-info-box">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-amber-600" />
-            <strong>Credenciales por defecto:</strong>
-          </div>
-          <div className="creds-row">
-            <span>Usuario: <code>admin</code></span>
-            <span>Contraseña: <code>neostore2026</code></span>
-          </div>
-          <button type="button" className="btn-quick-fill" onClick={handleQuickFill}>
-            Autocompletar Credenciales
-          </button>
+          <p className="login-sub">Gestión de Productos, Blog & Colecciones de Amazon Afiliados</p>
         </div>
 
         {error && (
@@ -72,9 +68,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
               <User size={18} className="input-icon" />
               <input
                 type="text"
-                placeholder="admin"
+                placeholder="usuario"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
                 required
               />
             </div>
@@ -89,14 +86,15 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 required
               />
             </div>
           </div>
 
-          <button type="submit" className="btn-editorial btn-login-submit">
-            <Lock size={18} />
-            <span>Ingresar al Panel Admin</span>
+          <button type="submit" className="btn-editorial btn-login-submit" disabled={isLoading}>
+            {isLoading ? <Loader2 size={18} className="spin" /> : <Lock size={18} />}
+            <span>{isLoading ? 'Verificando…' : 'Ingresar al Panel Admin'}</span>
           </button>
         </form>
       </div>
@@ -163,38 +161,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
           color: var(--text-muted);
         }
 
-        .credentials-info-box {
-          background-color: var(--bg-main);
-          border: 1px solid var(--border-color);
-          padding: 14px 16px;
-          border-radius: var(--border-radius-md);
-          font-size: 0.82rem;
-          margin-bottom: 24px;
-        }
-
-        .creds-row {
-          display: flex;
-          gap: 16px;
-          margin: 8px 0 10px 0;
-          color: var(--text-dark);
-        }
-
-        .creds-row code {
-          background-color: #fff3e0;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-weight: 700;
-        }
-
-        .btn-quick-fill {
-          background-color: var(--text-dark);
-          color: #ffffff;
-          font-size: 0.75rem;
-          font-weight: 600;
-          padding: 4px 12px;
-          border-radius: var(--border-radius-pill);
-        }
-
         .login-error-alert {
           background-color: #ffebee;
           color: #c62828;
@@ -218,6 +184,19 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
           padding: 14px;
           margin-top: 8px;
           font-size: 0.95rem;
+        }
+
+        .btn-login-submit:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .spin {
+          animation: login-spin 0.8s linear infinite;
+        }
+
+        @keyframes login-spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Product } from '../types/product';
 import { ExternalLink, Star, Eye, Check, Info } from 'lucide-react';
+import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
 interface ProductCardProps {
   product: Product;
@@ -33,21 +34,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       ? product.mainImage
       : FALLBACK_IMAGE;
 
-  // Append affiliate tag to Amazon URL dynamically
-  const getAffiliateUrl = (baseUrl: string) => {
-    try {
-      const url = new URL(baseUrl);
-      url.searchParams.set('tag', affiliateTag);
-      return url.toString();
-    } catch {
-      return `${baseUrl}?tag=${affiliateTag}`;
-    }
-  };
-
   const handleBuyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onTrackClick(product);
-    window.open(getAffiliateUrl(product.amazonUrl), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -160,15 +149,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="card-footer">
         <div className="price-box">
           <span className="current-price">${product.price.toFixed(2)}</span>
-          {product.originalPrice && (
-            <span className="original-price">${product.originalPrice.toFixed(2)}</span>
-          )}
+          <span className="price-disclaimer">El precio y la disponibilidad pueden variar en Amazon.</span>
         </div>
 
-        <button className="btn-amazon" onClick={handleBuyClick}>
-          <span>Comprar en Amazon</span>
+        <a
+          className="btn-amazon"
+          href={getAffiliateUrl(product.amazonUrl, affiliateTag)}
+          target="_blank"
+          rel={AMAZON_REL}
+          onClick={handleBuyClick}
+        >
+          <span>{AMAZON_CTA_TEXT}</span>
           <ExternalLink size={15} />
-        </button>
+        </a>
       </div>
 
       <style>{`
@@ -410,16 +403,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           line-height: 1;
         }
 
-        .original-price {
-          font-size: 0.78rem;
+        .price-disclaimer {
+          font-size: 0.65rem;
           color: var(--text-light);
-          text-decoration: line-through;
-          margin-top: 2px;
+          margin-top: 4px;
+          max-width: 150px;
+          line-height: 1.25;
         }
 
         .product-card .btn-amazon {
-          padding: 10px 18px;
-          font-size: 0.85rem;
+          padding: 10px 14px;
+          font-size: 0.82rem;
+          text-align: center;
         }
       `}</style>
     </div>

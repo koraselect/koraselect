@@ -9,6 +9,7 @@ import {
   Layers,
   Sparkles
 } from 'lucide-react';
+import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../utils/affiliate';
 
 interface AplusProductCardProps {
   product: Product;
@@ -27,19 +28,9 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
 }) => {
   const aPlus = product.aPlusContent;
 
-  const getAffiliateUrl = (baseUrl: string) => {
-    try {
-      const url = new URL(baseUrl);
-      url.searchParams.set('tag', affiliateTag);
-      return url.toString();
-    } catch {
-      return `${baseUrl}?tag=${affiliateTag}`;
-    }
-  };
-
-  const handleBuy = () => {
+  const handleBuy = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onTrackClick(product);
-    window.open(getAffiliateUrl(product.amazonUrl), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -56,7 +47,7 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
           }}
         />
         <div className="aplus-card-hero-overlay">
-          <span className="aplus-card-eyebrow font-heading">A+ Premium Selection</span>
+          <span className="aplus-card-eyebrow font-heading">KORASELECT Selection</span>
           <h3 className="aplus-card-hero-title font-heading">
             {aPlus?.heroTitle || product.title}
           </h3>
@@ -152,7 +143,7 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
       {/* Module 4: Color Collection */}
       {product.colors && product.colors.length > 0 && (
         <div className="aplus-card-module aplus-card-colors">
-          <h4 className="aplus-module-title font-heading">Premium Color Collection</h4>
+          <h4 className="aplus-module-title font-heading">Colores Destacados</h4>
           <p className="aplus-module-sub">Colores modernos para cada ocasión</p>
           <div className="aplus-colors-showcase">
             {product.colors.map((c, i) => (
@@ -170,9 +161,7 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
         <div className="aplus-card-price">
           <span className="aplus-price-label">Precio Amazon:</span>
           <span className="aplus-price-current">${product.price.toFixed(2)}</span>
-          {product.originalPrice && (
-            <span className="aplus-price-original">${product.originalPrice.toFixed(2)}</span>
-          )}
+          <span className="aplus-price-note">El precio y la disponibilidad pueden variar en Amazon.</span>
         </div>
 
         <div className="aplus-card-ctas">
@@ -185,10 +174,16 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
             <span>Ver despiece A+</span>
           </button>
 
-          <button className="btn-amazon aplus-buy-btn" onClick={handleBuy}>
-            <span>Comprar en Amazon</span>
+          <a
+            className="btn-amazon aplus-buy-btn"
+            href={getAffiliateUrl(product.amazonUrl, affiliateTag)}
+            target="_blank"
+            rel={AMAZON_REL}
+            onClick={handleBuy}
+          >
+            <span>{AMAZON_CTA_TEXT}</span>
             <ExternalLink size={15} />
-          </button>
+          </a>
         </div>
       </div>
 
@@ -497,10 +492,11 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
           line-height: 1;
         }
 
-        .aplus-price-original {
-          font-size: 0.82rem;
+        .aplus-price-note {
+          font-size: 0.68rem;
           color: var(--text-light);
-          text-decoration: line-through;
+          line-height: 1.3;
+          margin-top: 3px;
         }
 
         .aplus-card-ctas {
@@ -530,8 +526,10 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
         }
 
         .aplus-buy-btn {
-          padding: 11px 20px;
-          font-size: 0.88rem;
+          padding: 11px 18px;
+          font-size: 0.84rem;
+          text-align: center;
+          white-space: normal;
         }
 
         @media (max-width: 768px) {
