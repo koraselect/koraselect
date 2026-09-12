@@ -236,7 +236,7 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
           width: 100%;
           height: 100%;
           min-height: 300px;
-          object-fit: cover;
+          object-fit: contain;
           position: absolute;
           inset: 0;
         }
@@ -432,7 +432,7 @@ export const AplusProductCard: React.FC<AplusProductCardProps> = ({
         .aplus-card-arch img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
         }
 
         /* Colors */

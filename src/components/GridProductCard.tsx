@@ -132,7 +132,7 @@ export const GridProductCard: React.FC<GridProductCardProps> = ({
         .grid-card-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           transition: transform 0.5s ease;
         }
 
