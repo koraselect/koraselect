@@ -146,7 +146,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
             <div>
               <span className="brand-name font-heading">KORASELECT ADMIN</span>
-              <span className="brand-tagline">Panel de Control de Productos (Volver al Landing)</span>
             </div>
           </div>
 
@@ -179,6 +178,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Main Admin Dashboard Container */}
       <main className="container dashboard-content">
+        <h1 className="dashboard-content-title font-heading">Panel de Control</h1>
         {/* Metric Cards Grid */}
         <div className="metrics-grid">
           <div className="metric-card">
@@ -525,6 +525,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         .dashboard-content {
           margin-top: 32px;
+        }
+
+        .dashboard-content-title {
+          font-size: 1.6rem;
+          margin: 0 0 20px;
         }
 
         .metrics-grid {
