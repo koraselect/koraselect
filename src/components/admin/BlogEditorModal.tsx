@@ -110,7 +110,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   );
 
   // ---- IA ----
-  const [aiOpen, setAiOpen] = useState(true);
+  
   const [topic, setTopic] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
@@ -564,17 +564,15 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
             <>
               {/* ============ REDACTOR CON IA ============ */}
               {/* Panel IA */}
-              <div className={`ai-panel ${aiOpen ? 'open' : ''}`}>
-                <button type="button" className="ai-panel-toggle" onClick={() => setAiOpen((v) => !v)}>
+              <div className="ai-panel">
+                <div className="ai-panel-toggle">
                   <Sparkles size={16} />
                   <strong>Redactar borrador con IA</strong>
                   <span className="ai-engine-chip">Grok · fallback Gemini</span>
-                  {!aiOpen && contextSummary && <span className="ai-summary">{contextSummary}</span>}
-                  <ChevronDown size={16} className={`ai-chev ${aiOpen ? 'open' : ''}`} />
-                </button>
+                  {contextSummary && <span className="ai-summary">{contextSummary}</span>}
+                </div>
 
-                {aiOpen && (
-                  <div className="ai-panel-content">
+                <div className="ai-panel-content">
                     <div className="ai-panel-row">
                       <textarea
                         placeholder="Describe el tema de la entrada (ej: cómo elegir la maleta ideal para viajar ligero en familia)…"
@@ -758,10 +756,9 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                           {aiLoading ? <Loader2 size={16} className="spin" /> : <ShoppingBag size={16} />}
                           <span>{aiLoading ? 'Redactando…' : 'Redactar con producto publicado'}</span>
                         </button>
-                      </div>
-                    </div>
+</div>
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="blog-meta-grid">
