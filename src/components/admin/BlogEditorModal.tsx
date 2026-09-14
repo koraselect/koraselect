@@ -4,6 +4,7 @@ import { Product } from '../../types/product';
 import { generatePostWithAI } from '../../lib/ai';
 import { scrapeUrl, ScrapeResult } from '../../lib/scrape';
 import { lookupAmazonProduct } from '../../lib/amazon';
+import { BUILD_SHA } from '../../lib/build';
 import {
   X, Save, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronUp, ChevronDown, Trash2, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle,
@@ -506,6 +507,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
             <span className="badge-premium">{isEditing ? 'Editar Entrada' : 'Nueva Entrada de Blog'}</span>
             <h2 className="blog-editor-title font-heading">{isEditing ? `Editando: ${postToEdit.title}` : 'Publicar artículo en el Blog'}</h2>
           </div>
+          <span className="blog-build-tag" title="Versión del código">build {BUILD_SHA.slice(0, 7)}</span>
           <button className="modal-close-btn" onClick={onClose} title="Cerrar">
             <X size={20} />
           </button>
@@ -1125,6 +1127,15 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         .blog-editor-title {
           font-size: 1.45rem;
           margin-top: 6px;
+        }
+
+        .blog-build-tag {
+          font-size: 0.68rem;
+          color: var(--text-muted);
+          opacity: 0.8;
+          margin-right: 10px;
+          align-self: center;
+          white-space: nowrap;
         }
 
         .blog-editor-body {

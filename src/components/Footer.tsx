@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShoppingBag, ShieldCheck, Heart, ExternalLink, Lock, Newspaper } from 'lucide-react';
+import { BUILD_SHA } from '../lib/build';
 
 interface FooterProps {
   onNavigate?: (path: string) => void;
@@ -79,6 +80,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         <div className="footer-bottom">
           <span>&copy; {new Date().getFullYear()} KORASELECT. Todos los derechos reservados.</span>
+          <span className="build-tag" title="Versión del código desplegada">build {BUILD_SHA.slice(0, 7)}</span>
           <span className="crafted-with">
             Diseñado con <Heart size={14} fill="#e53935" stroke="#e53935" /> para ayudarte a encontrar los mejores productos en Amazon
           </span>
@@ -177,6 +179,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           display: flex;
           align-items: center;
           gap: 6px;
+        }
+
+        .build-tag {
+          font-size: 0.7rem;
+          color: var(--text-light);
+          opacity: 0.8;
         }
 
         @media (max-width: 768px) {
