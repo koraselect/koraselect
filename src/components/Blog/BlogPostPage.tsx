@@ -117,14 +117,6 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
           <img src={post.coverImage} alt={post.title} />
         </figure>
 
-        {/* Mandatory Affiliate Disclosure */}
-        <div className="blog-affiliate-notice">
-          <ShieldCheck size={17} />
-          <span>
-            <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
-          </span>
-        </div>
-
         {/* Body Blocks */}
         <div className="blog-post-body">
           {post.body.map((block, i) => {
@@ -168,6 +160,13 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
           <p className="blog-price-disclaimer">
             El precio y la disponibilidad de los productos pueden variar en Amazon. Si usas los enlaces de esta guía podríamos recibir una comisión sin costo adicional para ti.
           </p>
+          {/* Mandatory Affiliate Disclosure (pequeño, siempre al final) */}
+          <div className="blog-affiliate-notice">
+            <ShieldCheck size={13} />
+            <span>
+              <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
+            </span>
+          </div>
           <button className="btn-amazon" onClick={onBack}>
             <ArrowLeft size={16} />
             <span>Volver al blog</span>
@@ -255,21 +254,24 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
 
         .blog-affiliate-notice {
           display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          background: #f9f9f9;
-          border-left: 4px solid #111;
-          padding: 12px 16px;
-          margin-bottom: 28px;
-          font-size: 0.9rem;
-          color: #444;
-          line-height: 1.5;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          flex-wrap: wrap;
+          padding: 10px 4px 0;
+          margin: 28px 0 12px;
+          border-top: 1px solid #eee;
+          font-size: 0.78rem;
+          color: var(--text-muted);
+          line-height: 1.45;
+          text-align: center;
         }
 
         .blog-affiliate-notice svg {
           flex-shrink: 0;
-          margin-top: 2px;
         }
+
+        .blog-affiliate-notice strong { font-weight: 600; color: inherit; }
 
         .blog-post-body {
           font-size: 1.02rem;

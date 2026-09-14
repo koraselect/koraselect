@@ -601,13 +601,6 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
 
       {excerpt && <p className="preview-excerpt">{excerpt}</p>}
 
-      <div className="blog-affiliate-notice">
-        <ShieldAware />
-        <span>
-          <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
-        </span>
-      </div>
-
       <div className="blog-post-body">
         {!hasContent(blocks) ? (
           <p className="preview-empty">Aún no hay contenido. Vuelve al editor para escribirlo o usa el redactor con IA.</p>
@@ -620,6 +613,12 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         <p className="blog-price-disclaimer">
           El precio y la disponibilidad de los productos pueden variar en Amazon.
         </p>
+        <div className="blog-affiliate-notice">
+          <ShieldAware />
+          <span>
+            <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
+          </span>
+        </div>
       </footer>
     </div>
   );
@@ -2011,12 +2010,14 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         }
 
         .blog-affiliate-notice {
-          display: flex; align-items: flex-start; gap: 10px;
-          background: #f9f9f9; border-left: 4px solid #111;
-          padding: 12px 16px; margin-bottom: 26px;
-          font-size: 0.9rem; color: #444; line-height: 1.5;
+          display: flex; align-items: center; justify-content: center; gap: 6px;
+          flex-wrap: wrap; padding: 10px 4px 0; margin: 26px 0 4px;
+          border-top: 1px solid #eee;
+          font-size: 0.78rem; color: var(--text-muted); line-height: 1.45;
+          text-align: center;
         }
-        .blog-affiliate-notice svg { flex-shrink: 0; margin-top: 2px; }
+        .blog-affiliate-notice svg { flex-shrink: 0; }
+        .blog-affiliate-notice strong { font-weight: 600; color: inherit; }
 
         .blog-post-body { font-size: 1.02rem; line-height: 1.7; color: var(--text-dark); }
         .blog-post-body h2 { font-size: 1.4rem; margin: 30px 0 12px; }
