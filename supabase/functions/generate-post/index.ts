@@ -51,7 +51,7 @@ function buildPrompt(body: RequestBody): string {
   const selectedText = (body.selectedProducts || [])
     .map(
       (p, i) =>
-        `${i + 1}. ${p.title} (${p.amazonUrl || 'sin link'}) — precio ${p.price ?? '—'}, rating ${p.rating ?? '—'}, ${p.reviewsCount ?? 0} reseñas. Imagen: ${p.mainImage || '—'}${p.subtitle ? `. Subtítulo: ${p.subtitle}` : ''}${p.description ? `. Descripción: ${p.description}` : ''}`
+        `${i + 1}. ${p.title} (${p.amazonUrl || 'sin link'}) — precio ${p.price ?? '—'}, rating ${p.rating ?? '—'}, ${p.reviewsCount ?? 0} reseñas. Imagen (usa esta URL en el campo image de la tarjeta): ${p.mainImage || '—'}${p.subtitle ? `. Subtítulo: ${p.subtitle}` : ''}${p.description ? `. Descripción: ${p.description}` : ''}`
     )
     .join('\n');
 
@@ -67,7 +67,7 @@ function buildPrompt(body: RequestBody): string {
   }
 
   const selectedBlock = selectedText
-    ? `\n\nProductos destacados del catálogo para esta entrada (puedes referenciarlos y crear bloques product con ellos):\n${selectedText}`
+    ? `\n\nPRODUCTOS DESTACADOS (OBLIGATORIOS): debes incluir CADA uno de estos productos como una tarjeta product en la entrada, con su amazonUrl EXACTO y su imagen EXACTA:\n${selectedText}`
     : '';
 
   return `Eres redactor editorial experto de KORASELECT, una tienda afiliada de Amazon especializada en maletas y equipaje, botellas y termos, estuches y neceseres, organización, y gimbals o estabilizadores para creadores (p. ej. DJI RS Mini). Escribes en español neutro.
@@ -83,10 +83,10 @@ Puedes usar etiquetas <strong>, <em> y <u> dentro de los textos de p, h2, quote 
 
 Reglas:
 - Comienza con un párrafo de introducción atractivo y termina con una conclusión (cita o párrafo).
-- Incluye al menos una tarjeta product por cada 3 bloques, usando EXACTAMENTE los amazonUrl y las imágenes del catálogo entregado.
-- Si el catálogo está vacío pero hay productos destacados seleccionados, usa esos productos destacados para los bloques product.
-- Si no hay ni catálogo ni productos destacados, no generes bloques product.
-- Al integrar productos destacados espera a que encajen naturalmente con el tema (por ejemplo, que el DJI RS Mini aparezca en una entrada sobre gimbals).${selectedBlock}
+- Incluye al menos una tarjeta product por cada 3 bloques.
+- PRODUCTOS DESTACADOS (OBLIGATORIO si se entregan): crea una tarjeta product por CADA producto destacado. Priorízalos siempre sobre el resto del catálogo a la hora de elegir qué productos mostrar en las tarjetas.
+- Si NO hay productos destacados pero sí catálogo, usa los productos del catálogo para las tarjetas product respetando sus amazonUrl e imágenes exactos.
+- Si no hay ni catálogo ni productos destacados, no generes bloques product.${selectedBlock}
 ${scrapedText}
 - Tono cercano, útil y honesto; menciona el aviso de afiliación solo de forma breve al final si encaja.
 - ORTOGRAFÍA Y TERMINOLOGÍA: escribe en castellano de Venezuela (español neutro latinoamericano comprensivo para todo LATAM). Evita el español de España: no uses "vosotros", "ordenador" ni "móvil" (usa "computadora" o "celular"), ni muletillas como "vale", "guay", "chulo" o "coger". Para estabilizadores de imagen usa SIEMPRE el término técnico "gimbal" (tal cual, en inglés, como lo usa la industria) cada vez que te refieras al dispositivo, por ejemplo: "el DJI RS 4 Mini es un gimbal compacto". NUNCA lo traduzcas a "cardán" ni lo sustituyas por "estabilizador" como nombre principal ni lo parafrasees ("solución de estabilidad", "artefacto", etc.); puedes escribir "estabilizador (gimbal)" una vez si lo aclaras, y luego solo "gimbal". Respeta los nombres de marca (DJI, GoPro, etc.) y usa tildes y puntuación correctas.
