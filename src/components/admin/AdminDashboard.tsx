@@ -469,8 +469,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           width: 42px;
           height: 42px;
           border-radius: 50%;
-          background-color: var(--text-dark);
-          color: var(--bg-main);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -480,7 +478,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         .admin-logo-mark {
           width: 100%;
           height: 100%;
-          object-fit: contain;
+          object-fit: cover;
+          border-radius: 50%;
+        }
+
+        .admin-brand .brand-name {
+          font-size: 1.15rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          display: block;
+          line-height: 1.1;
         }
 
         .admin-nav-actions {
