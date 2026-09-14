@@ -10,7 +10,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     if (onNavigate) {
       onNavigate(path);
     } else {
-      window.location.hash = '';
+      window.history.pushState({}, '', '/');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -63,7 +63,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <li><a href="https://www.amazon.com/ConditionsOfUse" target="_blank" rel="noopener noreferrer">Condiciones de Uso de Amazon <ExternalLink size={12} /></a></li>
                 <li><a href="https://www.amazon.com/privacy" target="_blank" rel="noopener noreferrer">Política de Privacidad de Amazon <ExternalLink size={12} /></a></li>
                 <li><a href="https://affiliate-program.amazon.com/" target="_blank" rel="noopener noreferrer">Programa de Afiliados <ExternalLink size={12} /></a></li>
-                <li><a href="#admin" onClick={(e) => { e.preventDefault(); goTo('#admin'); }} style={{ fontWeight: 600, color: 'var(--text-dark)' }}><Lock size={12} /> Acceso Panel Admin</a></li>
+                <li><a href="/admin" onClick={(e) => { e.preventDefault(); goTo('/admin'); }} style={{ fontWeight: 600, color: 'var(--text-dark)' }}><Lock size={12} /> Acceso Panel Admin</a></li>
               </ul>
             </div>
           </div>

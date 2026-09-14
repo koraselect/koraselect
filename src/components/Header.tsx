@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
       onNavigateHome();
       return;
     }
-    window.location.hash = '';
+    window.history.pushState({}, '', '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (onReturnToStore) {
       onReturnToStore();
@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
       onNavigateHome();
       return;
     }
-    window.location.hash = '';
+    window.history.pushState({}, '', '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (onReturnToStore) {
       onReturnToStore();

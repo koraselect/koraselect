@@ -88,6 +88,7 @@ export const App: React.FC = () => {
 
   const getPathnameRoute = (): Route => {
     const path = window.location.pathname;
+    if (path === '/admin' || path.startsWith('/admin/')) return { name: 'admin' };
     const blogMatch = path.match(/^\/blog\/([a-z0-9-]+)\/?$/i);
     if (blogMatch) return { name: 'blogPost', slug: blogMatch[1] };
     if (path.startsWith('/blog')) return { name: 'blog' };
@@ -104,17 +105,18 @@ export const App: React.FC = () => {
   const [route, setRoute] = useState<Route>(parseRoute);
 
   const navigateTo = (path: string) => {
-    if (path.startsWith('#')) {
-      window.location.hash = path.slice(1);
-      setRoute({ name: 'admin' });
-      return;
-    }
-    const clean = path.startsWith('/') ? path : `/${path}`;
+    const clean = path === '#admin' || path === '#/admin' ? '/admin' : (path.startsWith('/') ? path : `/${path}`);
     window.history.pushState({}, '', clean);
     setRoute(getPathnameRoute());
     trackPageView();
     window.scrollTo({ top: 0 });
   };
+
+  useEffect(() => {
+    if (window.location.hash.toLowerCase().includes('admin')) {
+      window.history.replaceState({}, '', '/admin');
+    }
+  }, []);
 
   useEffect(() => {
     const handleUrlChange = () => setRoute(parseRoute());
@@ -315,7 +317,7 @@ export const App: React.FC = () => {
           affiliateConfig={affiliateConfig}
           isAdminAuthenticated={isAdminAuthenticated}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
-          onOpenAdmin={() => navigateTo('#admin')}
+          onOpenAdmin={() => navigateTo('/admin')}
           onLogout={handleAdminLogout}
           onReturnToStore={() => navigateTo('/')}
           showSearch={false}
@@ -364,7 +366,7 @@ export const App: React.FC = () => {
         affiliateConfig={affiliateConfig}
         isAdminAuthenticated={isAdminAuthenticated}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
-        onOpenAdmin={() => navigateTo('#admin')}
+        onOpenAdmin={() => navigateTo('/admin')}
         onLogout={handleAdminLogout}
         onReturnToStore={() => navigateTo('/')}
         activeRoute="store"
@@ -400,7 +402,7 @@ export const App: React.FC = () => {
                   <p>Agrega y gestiona productos del catálogo desde tu Panel Administrativo.</p>
                   <button 
                     className="btn-amazon mt-4" 
-                    onClick={() => navigateTo('#admin')}
+                    onClick={() => navigateTo('/admin')}
                   >
                     <PlusCircle size={18} />
                     <span>Ir al Dashboard Admin para Subir Productos</span>
