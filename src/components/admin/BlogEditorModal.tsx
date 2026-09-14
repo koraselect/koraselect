@@ -62,6 +62,33 @@ const hasContent = (blocks: BlogBlock[]) =>
     return (stripHtml(b.text || '') || '').length > 0;
   });
 
+// Cuando se genera con productos seleccionados, la entrada gira SOLO en torno a
+// esos productos: se descartan tarjetas de otros catálogo y se garantiza al menos
+// una tarjeta del primer producto elegido.
+const normalizeHighlightedBlocks = (blocks: BlogBlock[], selected: Product[]): BlogBlock[] => {
+  const allowed = new Set(selected.map((p) => (p.amazonUrl || p.asin || '').trim().toLowerCase()));
+  const kept = blocks.filter(
+    (b) => b.type !== 'product' || (!!b.amazonUrl && allowed.has(b.amazonUrl.trim().toLowerCase()))
+  );
+  const hasPickedCard = kept.some((b) => b.type === 'product');
+  if (!hasPickedCard && selected.length > 0) {
+    const p = selected[0];
+    const card: BlogBlock = {
+      type: 'product',
+      title: p.title,
+      image: p.mainImage || '',
+      excerpt: p.description || p.subtitle || 'Selección especial para Amazon Afiliados',
+      amazonUrl: p.amazonUrl,
+      rating: p.rating || 0,
+      reviewsCount: p.reviewsCount || 0
+    };
+    const firstP = kept.findIndex((b) => b.type === 'p');
+    const index = firstP === -1 ? 0 : firstP + 1;
+    kept.splice(index, 0, card);
+  }
+  return kept;
+};
+
 const formatDate = (iso: string) => {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -295,9 +322,19 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
     setAiLoading(true);
     setAiMessage(null);
     try {
+      const rawTopic = topic.trim();
+      const hasSelected = selectedProducts.length > 0;
+      const topicForAI = rawTopic || 
+        (hasSelected
+          ? `Escribe una reseña y guía de compra centrada en este producto (es OBLIGATORIAMENTE el tema principal de la entrada): "${selectedProducts[0].title}".${
+              selectedProducts.length > 1
+                ? ` También incluye estos otros productos seleccionados: ${selectedProducts.map((p) => p.title).join('; ')}.`
+                : ''
+            } Explica sus características, ventajas, desventajas, para quién es ideal y cuándo conviene comprarlo. NO escribas sobre otro tema distinto al producto.`
+          : '');
       const res = await generatePostWithAI({
-        title: title || topic || 'Entrada de blog',
-        topic,
+        title: title.trim() || (hasSelected ? `Reseña: ${selectedProducts[0].title}` : 'Entrada de blog'),
+        topic: topicForAI,
         blogCategory: category,
         products,
         existingPost: postToEdit,
@@ -306,8 +343,9 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         selectedProducts
       });
       if (res.success && res.blocks) {
-        setBlocks(res.blocks);
-        if (!title.trim()) handleSetTitle(topic.trim());
+        setBlocks(hasSelected ? normalizeHighlightedBlocks(res.blocks, selectedProducts) : res.blocks);
+        if (!title.trim()) handleSetTitle(rawTopic || (hasSelected ? `Reseña: ${selectedProducts[0].title}` : ''));
+        if (!coverImage.trim() && hasSelected && selectedProducts[0].mainImage) setCoverImage(selectedProducts[0].mainImage);
         const engineLabel = res.engine === 'gemini' ? 'Gemini (Google)' : 'Grok (Groq)';
         setAiMessage({ type: 'ok', text: `Borrador generado con ${engineLabel}. Revisa, edita y ajusta antes de guardar.` });
         setStep(3);
