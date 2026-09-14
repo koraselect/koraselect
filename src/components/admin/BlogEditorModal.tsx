@@ -7,7 +7,7 @@ import {
   X, Save, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronUp, ChevronDown, Trash2, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle,
   Type, List, Quote, Heading2, ShoppingBag, Image as ImageIcon, Link2, Search,
-  GripVertical, RefreshCw, Eye, Calendar, Clock, Star, ArrowLeft, ArrowRight, FileText
+  GripVertical, RefreshCw, Eye, Calendar, Clock, Star
 } from 'lucide-react';
 import { AMAZON_CTA_TEXT } from '../../utils/affiliate';
 
@@ -92,7 +92,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   const isEditing = !!postToEdit;
 
   // ---- Flujo por pasos ----
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [previewMode, setPreviewMode] = useState(false);
 
   // ---- Metadatos ----
   const [title, setTitle] = useState(postToEdit?.title || '');
@@ -271,8 +271,8 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
 
   // ---- IA ----
   const handleGenerateAI = async () => {
-    if (!title.trim() && !topic.trim()) {
-      setAiMessage({ type: 'err', text: 'Escribe al menos un título o un tema para que la IA redacte el borrador.' });
+    if (!title.trim() && !topic.trim() && selectedProducts.length === 0) {
+      setAiMessage({ type: 'err', text: 'Escribe al menos un título o tema, o selecciona un producto del catálogo para que la IA redacte el borrador.' });
       return;
     }
     setAiLoading(true);
@@ -302,6 +302,14 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
     } finally {
       setAiLoading(false);
     }
+  };
+
+  const handleGenerateAIWithProduct = () => {
+    if (selectedProducts.length === 0) {
+      setAiMessage({ type: 'err', text: 'Selecciona al menos un producto del catálogo para redactar la entrada destacándolos.' });
+      return;
+    }
+    handleGenerateAI();
   };
 
   const handleScrapeUrl = async () => {
@@ -345,32 +353,13 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
     setSelectedProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // ---- Navegación por pasos ----
-  const goForward = () => {
-    if (step === 1) {
-      if (!title.trim()) {
-        alert('Escribe un título para la entrada antes de continuar.');
-        return;
-      }
-      setStep(2);
-    } else if (step === 2) {
-      if (!hasContent(blocks)) {
-        alert('Escribe al menos un párrafo o genera el borrador con IA antes de continuar.');
-        return;
-      }
-      setStep(3);
-    }
-  };
-
   const handleSave = () => {
     if (!title.trim()) {
       alert('Escribe un título para la entrada.');
-      setStep(1);
       return;
     }
     if (!hasContent(blocks)) {
       alert('La entrada no tiene contenido. Escribe al menos un párrafo.');
-      setStep(2);
       return;
     }
     const finalSlug = slug.trim() || slugify(title);
@@ -468,109 +457,58 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           </button>
         </div>
 
-        {/* Stepper */}
-        <nav className="be-stepper" aria-label="Progreso de publicación">
-          {[
-            { n: 1, label: 'Información', icon: <FileText size={16} /> },
-            { n: 2, label: 'Contenido', icon: <Type size={16} /> },
-            { n: 3, label: 'Revisar y publicar', icon: <Eye size={16} /> }
-          ].map((s) => {
-            const reached = step >= s.n;
-            const active = step === s.n;
-            return (
-              <button
-                key={s.n}
-                type="button"
-                className={`be-step ${reached ? 'reached' : ''} ${active ? 'active' : ''}`}
-                onClick={() => s.n < step && setStep(s.n as 1 | 2 | 3)}
-                disabled={s.n > step}
-              >
-                <span className="be-step-dot">{s.icon}</span>
-                <span className="be-step-label">{s.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
         <div className="blog-editor-body">
-          {/* ============ PASO 1: INFORMACIÓN ============ */}
-          {step === 1 && (
+          {previewMode ? (
             <>
-              <div className="blog-meta-grid">
-                <div className="form-group col-span-2">
-                  <label>Título de la Entrada *</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Las mejores maletas de cabina para viajar ligero"
-                    value={title}
-                    onChange={(e) => handleSetTitle(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-                <div className="form-group col-span-2">
-                  <label>URL (slug)</label>
-                  <div className="input-with-icon slug-row">
-                    <span className="slug-prefix">/blog/</span>
-                    <input
-                      type="text"
-                      placeholder={slugify(title) || 'generado-automaticamente'}
-                      value={slug}
-                      onChange={(e) => { setSlug(slugify(e.target.value)); setSlugTouched(true); }}
-                    />
-                    <button
-                      type="button"
-                      className="slug-refresh"
-                      title="Regenerar URL desde el título"
-                      onClick={regenerateSlug}
-                      disabled={!title.trim()}
-                    >
-                      <RefreshCw size={15} />
-                    </button>
-                  </div>
-                  <span className="field-hint">Se genera automáticamente desde el título. Usa el botón ↻ para volver a generarlo.</span>
-                </div>
-                <div className="form-group">
-                  <label>Categoría</label>
-                  <input
-                    type="text"
-                    list="blg-cat-suggestions"
-                    placeholder="Equipaje, Hidratación…"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  />
-                  <datalist id="blg-cat-suggestions">
-                    {CATEGORY_SUGGESTIONS.map((c) => <option key={c} value={c} />)}
-                  </datalist>
-                </div>
-                <div className="form-group">
-                  <label>Fecha de publicación</label>
-                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                </div>
-                <div className="form-group col-span-2">
-                  <label>URL de imagen de portada</label>
-                  <div className="input-with-icon">
-                    <ImageIcon size={16} className="input-icon" />
-                    <input type="url" placeholder="https://images.unsplash.com/photo-…" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} />
-                  </div>
-                  <span className="field-hint">Si no la indicas, el post se verá sin imagen destacada.</span>
-                </div>
-                <div className="form-group col-span-2">
-                  <label>Extracto (resumen que se muestra en la portada del blog)</label>
-                  <textarea rows={2} placeholder="Resumen breve de la entrada…" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
-                </div>
+              {/* ============ VISTA PREVIA ============ */}
+            <div className="preview-wrap">
+              <div className="preview-head">
+                <Eye size={16} />
+                <strong>Vista previa del artículo publicado</strong>
               </div>
 
-              {coverImage && (
-                <div className="blog-cover-preview">
-                  <img src={coverImage} alt="Portada" />
-                </div>
-              )}
-            </>
-          )}
+              <div className="preview-post">
+                <header className="blog-post-header">
+                  <span className="blog-post-category">{category || 'General'}</span>
+                  <h1 className="font-heading">{title || 'Sin título'}</h1>
+                  <div className="blog-post-meta">
+                    <span><Calendar size={14} /> {date ? formatDate(date) : 'Sin fecha'}</span>
+                    <span><Clock size={14} /> {computeReadTime(blocks)} de lectura</span>
+                  </div>
+                </header>
 
-          {/* ============ PASO 2: CONTENIDO ============ */}
-          {step === 2 && (
+                <figure className="blog-post-cover">
+                  {coverImage ? <img src={coverImage} alt={title} /> : <div className="preview-cover-empty"><ImageIcon size={30} />Sin imagen de portada</div>}
+                </figure>
+
+                {excerpt && <p className="preview-excerpt">{excerpt}</p>}
+
+                <div className="blog-affiliate-notice">
+                  <ShieldAware />
+                  <span>
+                    <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
+                  </span>
+                </div>
+
+                <div className="blog-post-body">
+                  {!hasContent(blocks) ? (
+                    <p className="preview-empty">Aún no hay contenido. Vuelve al editor para escribirlo o usa el redactor con IA.</p>
+                  ) : (
+                    renderBlocksPreview()
+                  )}
+                </div>
+
+                <footer className="blog-post-footer">
+                  <p className="blog-price-disclaimer">
+                    El precio y la disponibilidad de los productos pueden variar en Amazon.
+                  </p>
+                </footer>
+              </div>
+            </div>
+            </>
+          ) : (
             <>
+              {/* ============ REDACTOR CON IA ============ */}
               {/* Panel IA */}
               <div className={`ai-panel ${aiOpen ? 'open' : ''}`}>
                 <button type="button" className="ai-panel-toggle" onClick={() => setAiOpen((v) => !v)}>
@@ -702,11 +640,92 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                         ) : (
                           <p className="ai-context-empty">La IA los usará como tarjetas destacadas en la entrada.</p>
                         )}
+                        <button
+                          type="button"
+                          className="btn-ai-generate btn-ai-product"
+                          onClick={handleGenerateAIWithProduct}
+                          disabled={aiLoading || selectedProducts.length === 0}
+                          title="Generar el borrador mostrando los productos seleccionados como tarjetas destacadas"
+                        >
+                          {aiLoading ? <Loader2 size={16} className="spin" /> : <ShoppingBag size={16} />}
+                          <span>{aiLoading ? 'Redactando…' : 'Redactar con producto publicado'}</span>
+                        </button>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+
+              <div className="blog-meta-grid">
+                <div className="form-group col-span-2">
+                  <label>Título de la Entrada *</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Las mejores maletas de cabina para viajar ligero"
+                    value={title}
+                    onChange={(e) => handleSetTitle(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <div className="form-group col-span-2">
+                  <label>URL (slug)</label>
+                  <div className="input-with-icon slug-row">
+                    <span className="slug-prefix">/blog/</span>
+                    <input
+                      type="text"
+                      placeholder={slugify(title) || 'generado-automaticamente'}
+                      value={slug}
+                      onChange={(e) => { setSlug(slugify(e.target.value)); setSlugTouched(true); }}
+                    />
+                    <button
+                      type="button"
+                      className="slug-refresh"
+                      title="Regenerar URL desde el título"
+                      onClick={regenerateSlug}
+                      disabled={!title.trim()}
+                    >
+                      <RefreshCw size={15} />
+                    </button>
+                  </div>
+                  <span className="field-hint">Se genera automáticamente desde el título. Usa el botón ↻ para volver a generarlo.</span>
+                </div>
+                <div className="form-group">
+                  <label>Categoría</label>
+                  <input
+                    type="text"
+                    list="blg-cat-suggestions"
+                    placeholder="Equipaje, Hidratación…"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  />
+                  <datalist id="blg-cat-suggestions">
+                    {CATEGORY_SUGGESTIONS.map((c) => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+                <div className="form-group">
+                  <label>Fecha de publicación</label>
+                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                </div>
+                <div className="form-group col-span-2">
+                  <label>URL de imagen de portada</label>
+                  <div className="input-with-icon">
+                    <ImageIcon size={16} className="input-icon" />
+                    <input type="url" placeholder="https://images.unsplash.com/photo-…" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} />
+                  </div>
+                  <span className="field-hint">Si no la indicas, el post se verá sin imagen destacada.</span>
+                </div>
+                <div className="form-group col-span-2">
+                  <label>Extracto (resumen que se muestra en la portada del blog)</label>
+                  <textarea rows={2} placeholder="Resumen breve de la entrada…" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
+                </div>
+              </div>
+
+              {coverImage && (
+                <div className="blog-cover-preview">
+                  <img src={coverImage} alt="Portada" />
+                </div>
+              )}
+
 
               {/* Editor de bloques */}
               <div className="blocks-editor">
@@ -937,81 +956,29 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
               </div>
             </>
           )}
-
-          {/* ============ PASO 3: REVISAR ============ */}
-          {step === 3 && (
-            <div className="preview-wrap">
-              <div className="preview-head">
-                <Eye size={16} />
-                <strong>Vista previa del artículo publicado</strong>
-              </div>
-
-              <div className="preview-post">
-                <header className="blog-post-header">
-                  <span className="blog-post-category">{category || 'General'}</span>
-                  <h1 className="font-heading">{title || 'Sin título'}</h1>
-                  <div className="blog-post-meta">
-                    <span><Calendar size={14} /> {date ? formatDate(date) : 'Sin fecha'}</span>
-                    <span><Clock size={14} /> {computeReadTime(blocks)} de lectura</span>
-                  </div>
-                </header>
-
-                <figure className="blog-post-cover">
-                  {coverImage ? <img src={coverImage} alt={title} /> : <div className="preview-cover-empty"><ImageIcon size={30} />Sin imagen de portada</div>}
-                </figure>
-
-                {excerpt && <p className="preview-excerpt">{excerpt}</p>}
-
-                <div className="blog-affiliate-notice">
-                  <ShieldAware />
-                  <span>
-                    <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
-                  </span>
-                </div>
-
-                <div className="blog-post-body">
-                  {!hasContent(blocks) ? (
-                    <p className="preview-empty">Aún no hay contenido. Vuelve al paso Contenido para escribirlo o generarlo con IA.</p>
-                  ) : (
-                    renderBlocksPreview()
-                  )}
-                </div>
-
-                <footer className="blog-post-footer">
-                  <p className="blog-price-disclaimer">
-                    El precio y la disponibilidad de los productos pueden variar en Amazon.
-                  </p>
-                </footer>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
         <div className="blog-editor-footer">
           <div className="footer-left">
             <button className="btn-text" onClick={onClose}>Cancelar</button>
-            {step > 1 && (
-              <button className="btn-secondary" onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}>
-                <ArrowLeft size={15} />
-                <span>Atrás</span>
-              </button>
-            )}
           </div>
           <div className="footer-right">
-            {step < 3 ? (
-              <button className="btn-amazon btn-forward" onClick={goForward}>
-                <span>{step === 1 ? 'Continuar' : 'Vista previa'}</span>
-                <ArrowRight size={16} />
-              </button>
-            ) : (
-              <button className="btn-amazon btn-save-blog" onClick={handleSave}>
-                <Save size={16} />
-                <span>{isEditing ? 'Guardar Cambios' : 'Publicar Entrada'}</span>
-              </button>
-            )}
+            <button className="btn-secondary" onClick={() => setPreviewMode(false)} disabled={!previewMode}>
+              <Type size={15} />
+              <span>Editar contenido</span>
+            </button>
+            <button className="btn-secondary" onClick={() => setPreviewMode(true)} disabled={previewMode}>
+              <Eye size={15} />
+              <span>Vista previa</span>
+            </button>
+            <button className="btn-amazon btn-save-blog" onClick={handleSave}>
+              <Save size={16} />
+              <span>{isEditing ? 'Guardar Cambios' : 'Publicar Entrada'}</span>
+            </button>
           </div>
         </div>
+
       </div>
 
       <style>{`
@@ -1109,44 +1076,6 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         }
 
         /* ---- Stepper ---- */
-        .be-stepper {
-          display: flex;
-          gap: 0;
-          padding: 16px 28px;
-          border-bottom: 1px solid var(--border-color);
-          background: #fafafa;
-        }
-
-        .be-step {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: none;
-          border: none;
-          padding: 6px 14px;
-          border-radius: var(--border-radius-pill);
-          cursor: default;
-          font-family: var(--font-body);
-          color: var(--text-muted);
-          font-size: 0.83rem;
-          font-weight: 600;
-          opacity: 0.55;
-          transition: all var(--transition-fast);
-        }
-
-        .be-step:not(:disabled) { cursor: pointer; }
-
-        .be-step.reached { opacity: 1; color: var(--text-dark); }
-        .be-step.reached:not(.active):hover { background: #f0f0f0; }
-
-        .be-step.active {
-          background: var(--text-dark);
-          color: #fff;
-          box-shadow: var(--shadow-sm);
-        }
-
-        .be-step-dot { display: flex; }
-
         .field-hint {
           display: block;
           font-size: 0.74rem;
@@ -1268,6 +1197,8 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
 
         .btn-ai-generate:hover { background: #5b21b6; }
         .btn-ai-generate:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .btn-ai-product { width: 100%; justify-content: center; margin-top: 10px; }
 
         .ai-message {
           display: flex;
@@ -1657,9 +1588,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         .preview-empty { color: var(--text-muted); font-size: 0.95rem; }
 
         @media (max-width: 700px) {
-          .be-stepper { padding: 12px 16px; }
-          .be-step { padding: 6px 10px; font-size: 0.78rem; }
-          .blog-meta-grid { grid-template-columns: 1fr; }
+            .blog-meta-grid { grid-template-columns: 1fr; }
           .col-span-2 { grid-column: span 1; }
           .ai-panel-row { flex-direction: column; }
           .ai-context-grid { grid-template-columns: 1fr; }
