@@ -1061,6 +1061,12 @@ export const App: React.FC = () => {
           min-height: 2.36em;
         }
 
+        .carousel-cell .card-highlights,
+        .carousel-cell .dimensions-info,
+        .carousel-cell .card-footer {
+          display: none;
+        }
+
         .catalog-layout {
           display: grid;
           gap: 28px;
