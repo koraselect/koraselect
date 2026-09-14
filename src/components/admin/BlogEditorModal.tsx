@@ -2,10 +2,11 @@ import React, { useRef, useState } from 'react';
 import { BlogPost, BlogBlock, TextAlign } from '../../types/blog';
 import { Product } from '../../types/product';
 import { generatePostWithAI } from '../../lib/ai';
+import { scrapeUrl, ScrapeResult } from '../../lib/scrape';
 import {
   X, Save, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronUp, ChevronDown, Trash2, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle,
-  Type, List, Quote, Heading2, ShoppingBag, Image as ImageIcon
+  Type, List, Quote, Heading2, ShoppingBag, Image as ImageIcon, Link2, Search
 } from 'lucide-react';
 import { AMAZON_CTA_TEXT } from '../../utils/affiliate';
 
@@ -92,6 +93,16 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   const [topic, setTopic] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // ---- Contexto: URL de referencia ----
+  const [scrapedUrlInput, setScrapedUrlInput] = useState('');
+  const [scraped, setScraped] = useState<ScrapeResult | null>(null);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeError, setScrapeError] = useState('');
+
+  // ---- Contexto: productos seleccionados del catálogo ----
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [pickerProduct, setPickerProduct] = useState('');
 
   // Refs para contentEditable
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -213,7 +224,10 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         topic,
         blogCategory: category,
         products,
-        existingPost: postToEdit
+        existingPost: postToEdit,
+        scrapedUrl: scraped?.url,
+        scrapedContent: scraped?.content,
+        selectedProducts
       });
       if (res.success && res.blocks) {
         setBlocks(res.blocks);
@@ -229,6 +243,49 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
     } finally {
       setAiLoading(false);
     }
+  };
+
+  // Extrae contenido desde un enlace de referencia
+  const handleScrapeUrl = async () => {
+    const url = scrapedUrlInput.trim();
+    if (!url) {
+      setScrapeError('Pega primero la URL del artículo o página de referencia.');
+      return;
+    }
+    setScraping(true);
+    setScrapeError('');
+    setAiMessage(null);
+    try {
+      const res = await scrapeUrl(url);
+      setScraped(res);
+      setTopic((prev) => prev || res.title || '');
+      if (!title.trim()) handleSetTitle(res.title || url);
+      if (res.image && !coverImage.trim()) setCoverImage(res.image);
+      setScrapedUrlInput('');
+    } catch (e) {
+      setScrapeError(e instanceof Error ? e.message : 'No se pudo extraer el contenido de esa página.');
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  const handleRemoveScraped = () => {
+    setScraped(null);
+    setScrapeError('');
+  };
+
+  // Selección de productos del catálogo como contexto
+  const handleAddSelectedProduct = () => {
+    if (!pickerProduct) return;
+    const p = products.find((prod) => (prod.asin || prod.amazonUrl) === pickerProduct);
+    if (p && !selectedProducts.some((s) => s.id === p.id)) {
+      setSelectedProducts((prev) => [...prev, p]);
+    }
+    setPickerProduct('');
+  };
+
+  const handleRemoveSelectedProduct = (id: string) => {
+    setSelectedProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const handleSave = () => {
@@ -303,6 +360,104 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                 <span>{aiMessage.text}</span>
               </div>
             )}
+
+            {/* Contexto opcional: extraer desde enlace */}
+            <div className="ai-context-section">
+              <div className="ai-context-title">
+                <Link2 size={14} />
+                <strong>Contexto desde una URL de referencia <span className="ai-optional">(opcional)</span></strong>
+              </div>
+              <div className="ai-scrape-row">
+                <input
+                  type="url"
+                  placeholder="Pega el enlace de un artículo o página para inspirar la redacción…"
+                  value={scrapedUrlInput}
+                  onChange={(e) => setScrapedUrlInput(e.target.value)}
+                  className="ai-scrape-input"
+                />
+                <button
+                  type="button"
+                  className="btn-ai-grab"
+                  onClick={handleScrapeUrl}
+                  disabled={scraping}
+                  title="Extraer el contenido de la página"
+                >
+                  {scraping ? <Loader2 size={15} className="spin" /> : <Search size={15} />}
+                  <span>{scraping ? 'Extrayendo…' : 'Extraer'}</span>
+                </button>
+              </div>
+              {scrapeError && (
+                <div className="ai-message err" style={{ marginTop: 8 }}>
+                  <AlertCircle size={14} />
+                  <span>{scrapeError}</span>
+                </div>
+              )}
+              {scraped && (
+                <div className="ai-scraped-chip">
+                  <div className="ai-scraped-info">
+                    <CheckCircle2 size={15} className="ai-scraped-check" />
+                    <span className="ai-scraped-label">Contenido extraído:</span>
+                    <span className="ai-scraped-title">
+                      {scraped.title || scraped.url}
+                      {scraped.content ? ` — ${scraped.content.length.toLocaleString()} caracteres` : ''}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="ai-chip-remove"
+                    onClick={handleRemoveScraped}
+                    title="Quitar el contenido extraído"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Contexto opcional: producto del catálogo */}
+            <div className="ai-context-section">
+              <div className="ai-context-title">
+                <ShoppingBag size={14} />
+                <strong>Usar un producto publicado como contexto <span className="ai-optional">(opcional)</span></strong>
+              </div>
+              <div className="ai-scrape-row">
+                <div className="ai-product-picker">
+                  <select value={pickerProduct} onChange={(e) => setPickerProduct(e.target.value)}>
+                    <option value="">— Elegir producto del catálogo —</option>
+                    {pickerOptions}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  className="btn-ai-grab"
+                  onClick={handleAddSelectedProduct}
+                  disabled={!pickerProduct || selectedProducts.length >= 6}
+                  title="Añadir producto seleccionado como contexto"
+                >
+                  <Plus size={15} />
+                  <span>Añadir</span>
+                </button>
+              </div>
+              {selectedProducts.length > 0 && (
+                <div className="ai-selected-products">
+                  {selectedProducts.map((p) => (
+                    <div className="ai-product-chip" key={p.id}>
+                      {p.mainImage && <img src={p.mainImage} alt="" />}
+                      <span className="ai-product-chip-name" title={p.title}>{p.title}</span>
+                      <span className="ai-product-chip-price">{p.price ? `$${p.price.toFixed(2)}` : ''}</span>
+                      <button
+                        type="button"
+                        className="ai-chip-remove"
+                        onClick={() => handleRemoveSelectedProduct(p.id)}
+                        title="Quitar producto"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Metadatos */}
@@ -693,6 +848,168 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         .ai-message.ok { background: #e8f5e9; color: #2e7d32; }
         .ai-message.err { background: #ffebee; color: #c62828; }
 
+        .ai-context-section {
+          border-top: 1px dashed #d8d4f0;
+          margin-top: 12px;
+          padding-top: 12px;
+        }
+
+        .ai-context-title {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 0.83rem;
+          color: #5b21b6;
+          margin-bottom: 8px;
+        }
+
+        .ai-optional {
+          color: var(--text-muted);
+          font-weight: 500;
+          font-size: 0.72rem;
+          margin-left: 4px;
+        }
+
+        .ai-scrape-row {
+          display: flex;
+          gap: 8px;
+          align-items: stretch;
+        }
+
+        .ai-scrape-input {
+          flex: 1;
+          padding: 9px 12px;
+          border: 1px solid #d8d4f0;
+          border-radius: var(--border-radius-md);
+          font-family: var(--font-body);
+          font-size: 0.84rem;
+        }
+
+        .ai-product-picker {
+          flex: 1;
+        }
+
+        .ai-product-picker select {
+          width: 100%;
+          height: 100%;
+          padding: 9px 12px;
+          border: 1px solid #d8d4f0;
+          border-radius: var(--border-radius-md);
+          background: #fff;
+          font-family: var(--font-body);
+          font-size: 0.84rem;
+          color: var(--text-dark);
+        }
+
+        .btn-ai-grab {
+          background: #ffffff;
+          color: #5b21b6;
+          border: 1px solid #c4b5fd;
+          font-size: 0.82rem;
+          font-weight: 700;
+          padding: 9px 14px;
+          border-radius: var(--border-radius-pill);
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          white-space: nowrap;
+          transition: all var(--transition-fast);
+        }
+
+        .btn-ai-grab:hover { background: #f5f3ff; }
+        .btn-ai-grab:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .ai-scraped-chip {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-top: 10px;
+          background: #f5f3ff;
+          border: 1px solid #e9d5ff;
+          border-radius: var(--border-radius-md);
+          padding: 8px 12px;
+          font-size: 0.8rem;
+        }
+
+        .ai-scraped-info {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          min-width: 0;
+        }
+
+        .ai-scraped-check { color: #16a34a; flex-shrink: 0; }
+
+        .ai-scraped-label {
+          color: var(--text-muted);
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+
+        .ai-scraped-title {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-weight: 500;
+        }
+
+        .ai-chip-remove {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-muted);
+          flex-shrink: 0;
+          transition: all var(--transition-fast);
+        }
+
+        .ai-chip-remove:hover { background: #ffebee; color: #c62828; }
+
+        .ai-selected-products {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 10px;
+        }
+
+        .ai-product-chip {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: #f5f3ff;
+          border: 1px solid #e9d5ff;
+          border-radius: var(--border-radius-md);
+          padding: 6px 10px;
+          font-size: 0.82rem;
+        }
+
+        .ai-product-chip img {
+          width: 36px;
+          height: 30px;
+          object-fit: cover;
+          border-radius: 5px;
+          border: 1px solid var(--border-color);
+          flex-shrink: 0;
+        }
+
+        .ai-product-chip-name {
+          flex: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-weight: 600;
+        }
+
+        .ai-product-chip-price {
+          color: var(--text-dark);
+          font-weight: 700;
+          flex-shrink: 0;
+        }
+
         .spin { animation: be-spin 0.8s linear infinite; }
         @keyframes be-spin { to { transform: rotate(360deg); } }
 
@@ -933,6 +1250,8 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           .blog-meta-grid { grid-template-columns: 1fr; }
           .col-span-2 { grid-column: span 1; }
           .ai-panel-row { flex-direction: column; }
+          .ai-scrape-row { flex-direction: column; }
+          .btn-ai-grab { justify-content: center; }
         }
       `}</style>
     </div>

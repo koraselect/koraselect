@@ -9,12 +9,15 @@ export interface AIGenerateResult {
   error?: string;
 }
 
-interface GeneratePostRequest {
+export interface GeneratePostRequest {
   title: string;
   topic?: string;
   blogCategory?: string;
   products: Pick<Product, 'title' | 'asin' | 'amazonUrl' | 'price' | 'rating' | 'reviewsCount' | 'mainImage'>[];
   existingPost?: BlogPost | null;
+  scrapedUrl?: string;
+  scrapedContent?: string;
+  selectedProducts?: Pick<Product, 'title' | 'asin' | 'amazonUrl' | 'price' | 'rating' | 'reviewsCount' | 'mainImage' | 'subtitle' | 'description'>[];
 }
 
 export const generatePostWithAI = async (
@@ -41,7 +44,20 @@ export const generatePostWithAI = async (
             category: req.existingPost.category,
             body: req.existingPost.body
           }
-        : null
+        : null,
+      scrapedUrl: req.scrapedUrl || '',
+      scrapedContent: req.scrapedContent || '',
+      selectedProducts: (req.selectedProducts || []).map((p) => ({
+        title: p.title,
+        asin: p.asin || '',
+        amazonUrl: p.amazonUrl,
+        price: p.price,
+        rating: p.rating,
+        reviewsCount: p.reviewsCount,
+        mainImage: p.mainImage,
+        subtitle: p.subtitle || '',
+        description: p.description || ''
+      }))
     }
   });
 
