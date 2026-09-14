@@ -36,7 +36,7 @@ export const BlogIndexPage: React.FC<BlogIndexPageProps> = ({ posts, onOpenPost 
           <div className="blog-disclosure">
             <ShieldCheck size={16} />
             <span>
-              Aviso de Afiliación: Este blog contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
+              Aviso de Afiliación: Este blog contiene enlaces de afiliados. Como Asociado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
             </span>
           </div>
         </section>

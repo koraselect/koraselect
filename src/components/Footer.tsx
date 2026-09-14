@@ -73,7 +73,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         <div className="amazon-disclosure-box">
           <ShieldCheck size={18} className="disclosure-icon" />
           <p>
-            <strong>Divulgación de Afiliado:</strong> <strong>KORASELECT</strong> participa en el Programa de Afiliados de Amazon Services LLC, un programa de publicidad para afiliados diseñado para ofrecer a sitios web un modo de obtener comisiones por publicidad, publicitando e incluyendo enlaces a Amazon.com y sitios afiliados. Como Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables.
+            <strong>Divulgación de Afiliado:</strong> <strong>KORASELECT</strong> participa en el Programa de Afiliados de Amazon Services LLC, un programa de publicidad para afiliados diseñado para ofrecer a sitios web un modo de obtener comisiones por publicidad, publicitando e incluyendo enlaces a Amazon.com y sitios afiliados. Como Asociado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables.
           </p>
         </div>
 

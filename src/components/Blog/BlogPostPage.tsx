@@ -75,6 +75,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
   const endRef = useRef<HTMLElement>(null);
   const [atEnd, setAtEnd] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     document.title = post ? `${post.title} · KORASELECT` : 'Artículo no encontrado · KORASELECT';
@@ -99,6 +100,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
     if (!el) return;
     const max = el.scrollHeight - el.clientHeight;
     setProgress(max > 0 ? Math.min(100, Math.round((el.scrollTop / max) * 100)) : 0);
+    setShowTop(el.scrollTop > 200);
   };
 
   const scrollReaderToTop = () => {
@@ -218,25 +220,28 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
                   <ExternalLink size={15} />
                 </a>
               )}
-              <button className="blog-end-top-btn" onClick={scrollReaderToTop}>
-                <ArrowUp size={16} />
-                <span>Volver al inicio de la lectura</span>
-              </button>
             </div>
 
-            <p className="blog-price-disclaimer">
-              El precio y la disponibilidad de los productos pueden variar en Amazon. Si usas los enlaces de esta guía podríamos recibir una comisión sin costo adicional para ti.
-            </p>
             {/* Mandatory Affiliate Disclosure (pequeño, siempre al final) */}
             <div className="blog-affiliate-notice">
               <ShieldCheck size={13} />
               <span>
-                <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
+                <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Asociado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
               </span>
             </div>
           </footer>
         </div>
       </div>
+
+      {/* Botón flotante volver al inicio */}
+      <button
+        className="blog-scroll-top-btn"
+        onClick={scrollReaderToTop}
+        title="Volver al inicio de la lectura"
+        style={{ opacity: showTop ? 1 : 0, pointerEvents: showTop ? 'auto' : 'none' }}
+      >
+        <ArrowUp size={18} />
+      </button>
 
       <style>{`
         .blog-post {
@@ -244,6 +249,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
           min-height: 0;
           display: flex;
           flex-direction: column;
+          position: relative;
         }
 
         /* ---- Barra superior de la lectura ---- */
@@ -291,6 +297,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
 
         /* ---- CTA al final de la lectura ---- */
         .blog-end-cta {
+          width: 100%;
           text-align: center;
           padding: 34px 24px;
           margin-bottom: 22px;
@@ -351,24 +358,26 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
           }
         }
 
-        .blog-end-top-btn {
-          display: inline-flex;
+        /* Botón flotante "volver al inicio" */
+        .blog-scroll-top-btn {
+          position: absolute;
+          right: 22px;
+          bottom: 22px;
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          background: var(--text-dark);
+          color: var(--bg-main);
+          display: flex;
           align-items: center;
-          gap: 6px;
-          margin-top: 16px;
-          background: none;
-          border: none;
-          padding: 6px 10px;
-          color: var(--text-muted);
-          font-family: var(--font-body);
-          font-size: 0.85rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: color var(--transition-fast);
+          justify-content: center;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+          transition: opacity var(--transition-normal), transform var(--transition-fast);
+          z-index: 5;
         }
 
-        .blog-end-top-btn:hover {
-          color: var(--text-dark);
+        .blog-scroll-top-btn:hover {
+          transform: translateY(-3px);
         }
 
         .blog-back-btn {
@@ -582,13 +591,6 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
           flex-direction: column;
           align-items: flex-start;
           gap: 16px;
-        }
-
-        .blog-price-disclaimer {
-          font-size: 0.85rem;
-          color: var(--text-muted);
-          line-height: 1.5;
-          margin: 0;
         }
 
         .blog-not-found {

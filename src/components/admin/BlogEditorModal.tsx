@@ -627,13 +627,10 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
       </div>
 
       <footer className="blog-post-footer">
-        <p className="blog-price-disclaimer">
-          El precio y la disponibilidad de los productos pueden variar en Amazon.
-        </p>
         <div className="blog-affiliate-notice">
           <ShieldAware />
           <span>
-            <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
+            <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Asociado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
           </span>
         </div>
       </footer>
@@ -2102,7 +2099,6 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         .blog-product-cta { padding: 10px 16px; font-size: 0.82rem; white-space: normal; text-align: center; }
 
         .blog-post-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); }
-        .blog-price-disclaimer { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
 
         .preview-empty { color: var(--text-muted); font-size: 0.95rem; }
 
