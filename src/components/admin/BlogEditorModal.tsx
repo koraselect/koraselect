@@ -1208,6 +1208,64 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           background: #fff;
         }
 
+        .blog-steps-wrap .steps-bar {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-top: 4px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+
+        .blog-steps-wrap .step-pill {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.84rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          background-color: var(--bg-main);
+          padding: 8px 16px;
+          border-radius: var(--border-radius-pill);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          white-space: nowrap;
+          border: 1px solid var(--border-color);
+          flex-shrink: 0;
+        }
+
+        .blog-steps-wrap .step-pill.active {
+          background-color: var(--text-dark);
+          color: #ffffff;
+          border-color: var(--text-dark);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .blog-steps-wrap .step-pill.done {
+          background-color: var(--bg-sage-light);
+          color: #2e4d36;
+          border-color: #c8e6c9;
+        }
+
+        .blog-steps-wrap .step-num {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: rgba(0, 0, 0, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+          font-weight: 700;
+        }
+
+        .blog-steps-wrap .step-connector {
+          flex: 1;
+          height: 1px;
+          background-color: var(--border-color);
+          min-width: 16px;
+        }
+
         .blog-stepper {
           display: flex;
           align-items: center;
