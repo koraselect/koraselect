@@ -75,7 +75,6 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
   const endRef = useRef<HTMLElement>(null);
   const [atEnd, setAtEnd] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     document.title = post ? `${post.title} · KORASELECT` : 'Artículo no encontrado · KORASELECT';
@@ -100,7 +99,6 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
     if (!el) return;
     const max = el.scrollHeight - el.clientHeight;
     setProgress(max > 0 ? Math.min(100, Math.round((el.scrollTop / max) * 100)) : 0);
-    setShowTop(el.scrollTop > 200);
   };
 
   const scrollReaderToTop = () => {
@@ -238,7 +236,6 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
         className="blog-scroll-top-btn"
         onClick={scrollReaderToTop}
         title="Volver al inicio de la lectura"
-        style={{ opacity: showTop ? 1 : 0, pointerEvents: showTop ? 'auto' : 'none' }}
       >
         <ArrowUp size={18} />
       </button>
