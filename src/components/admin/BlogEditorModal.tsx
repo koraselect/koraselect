@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { BlogPost, BlogBlock, TextAlign } from '../../types/blog';
 import { Product } from '../../types/product';
 import { generatePostWithAI } from '../../lib/ai';
@@ -116,6 +116,12 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0 });
+  }, [step]);
 
   // ---- Contexto: URL de referencia ----
   const [scrapedUrlInput, setScrapedUrlInput] = useState('');
@@ -515,7 +521,28 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           </button>
         </div>
 
-        <div className="blog-editor-body">
+        {/* ============ PASOS DEL ASISTENTE (fijos, fuera del scroll) ============ */}
+        {!previewMode && (
+          <div className="blog-stepper">
+            {[
+              { n: 1, label: 'Redactar con IA' },
+              { n: 2, label: 'Detalles de la entrada' },
+              { n: 3, label: 'Contenido' }
+            ].map((s) => (
+              <button
+                key={s.n}
+                type="button"
+                className={`blog-step ${step === s.n ? 'active' : ''} ${step > s.n ? 'done' : ''}`}
+                onClick={() => setStep(s.n as 1 | 2 | 3)}
+              >
+                <span className="step-dot">{step > s.n ? <Check size={12} /> : s.n}</span>
+                <span className="step-label">{s.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="blog-editor-body" ref={bodyRef}>
           {previewMode ? (
             <>
               {/* ============ VISTA PREVIA ============ */}
@@ -566,25 +593,6 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
             </>
           ) : (
             <>
-              {/* ============ PASOS DEL ASISTENTE ============ */}
-              <div className="blog-stepper">
-                {[
-                  { n: 1, label: 'Redactar con IA' },
-                  { n: 2, label: 'Detalles de la entrada' },
-                  { n: 3, label: 'Contenido' }
-                ].map((s) => (
-                  <button
-                    key={s.n}
-                    type="button"
-                    className={`blog-step ${step === s.n ? 'active' : ''} ${step > s.n ? 'done' : ''}`}
-                    onClick={() => setStep(s.n as 1 | 2 | 3)}
-                  >
-                    <span className="step-dot">{step > s.n ? <Check size={12} /> : s.n}</span>
-                    <span className="step-label">{s.label}</span>
-                  </button>
-                ))}
-              </div>
-
               {/* ============ PASO 1 · REDACTOR CON IA ============ */}
               {step === 1 && (
               <>
@@ -1482,7 +1490,16 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         }
 
         .ai-product-picker { display: flex; flex-direction: column; gap: 8px; }
-        .ai-product-search { width: 100%; }
+        .ai-product-search {
+          width: 100%;
+          padding: 9px 12px;
+          border: 1px solid #d8d4f0;
+          border-radius: var(--border-radius-md);
+          background: #fff;
+          font-family: var(--font-body);
+          font-size: 0.84rem;
+          color: var(--text-dark);
+        }
         .ai-product-cat {
           width: 100%;
           padding: 8px 10px;
