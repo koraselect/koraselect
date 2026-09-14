@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, Fragment } from 'react';
 import { BlogPost, BlogBlock, TextAlign } from '../../types/blog';
 import { Product } from '../../types/product';
 import { generatePostWithAI } from '../../lib/ai';
@@ -523,22 +523,25 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
 
         {/* ============ PASOS DEL ASISTENTE (fijos, fuera del scroll) ============ */}
         {!previewMode && (
-          <div className="blog-stepper">
-            {[
-              { n: 1, label: 'Redactar con IA' },
-              { n: 2, label: 'Detalles de la entrada' },
-              { n: 3, label: 'Contenido' }
-            ].map((s) => (
-              <button
-                key={s.n}
-                type="button"
-                className={`blog-step ${step === s.n ? 'active' : ''} ${step > s.n ? 'done' : ''}`}
-                onClick={() => setStep(s.n as 1 | 2 | 3)}
-              >
-                <span className="step-dot">{step > s.n ? <Check size={12} /> : s.n}</span>
-                <span className="step-label">{s.label}</span>
-              </button>
-            ))}
+          <div className="blog-steps-wrap">
+            <div className="steps-bar">
+              {[
+                { n: 1, label: 'Redactar con IA' },
+                { n: 2, label: 'Detalles' },
+                { n: 3, label: 'Contenido' }
+              ].map((s, i) => (
+                <Fragment key={s.n}>
+                  {i > 0 && <div className="step-connector" />}
+                  <div
+                    className={`step-pill ${step === s.n ? 'active' : step > s.n ? 'done' : ''}`}
+                    onClick={() => setStep(s.n as 1 | 2 | 3)}
+                  >
+                    <span className="step-num">{step > s.n ? <Check size={12} /> : s.n}</span>
+                    <span className="step-name">{s.label}</span>
+                  </div>
+                </Fragment>
+              ))}
+            </div>
           </div>
         )}
 

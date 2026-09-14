@@ -307,7 +307,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
         {/* Wizard Header */}
         <div className="wizard-header">
           <div className="flex items-center gap-2 mb-1">
-            <span className="badge-premium">{isEditing ? 'Editar Producto (CRUD)' : 'Nuevo Producto (CRUD)'}</span>
+            <span className="badge-premium">{isEditing ? 'Editar Producto' : 'Nuevo Producto'}</span>
           </div>
           <h2 className="wizard-title font-heading">{isEditing ? `Editar: ${productToEdit.title}` : 'Publicar Producto en Catálogo'}</h2>
 
