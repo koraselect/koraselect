@@ -190,6 +190,28 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   // Refs para contentEditable
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // Sincroniza el DOM de los bloques contentEditable con el estado. Necesario
+  // porque los divs se muestran vacíos al montar: la IA o una entrada existente
+  // cargan el texto en `blocks`, pero React nunca puebla el innerHTML solo.
+  const syncRefsWithBlocks = () => {
+    blocks.forEach((b, i) => {
+      if (b.type === 'product') return;
+      if (b.type === 'list') {
+        b.items.forEach((item, j) => {
+          const el = refs.current[`${i}-${j}`];
+          if (el && stripHtml(el.innerHTML) !== stripHtml(item)) el.innerHTML = item;
+        });
+      } else {
+        const el = refs.current[String(i)];
+        if (el && stripHtml(el.innerHTML) !== stripHtml(b.text)) el.innerHTML = b.text;
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (step === 3) syncRefsWithBlocks();
+  }, [step, blocks]);
+
   const handleSetTitle = (v: string) => {
     setTitle(v);
     if (!isEditing && !slugTouched) setSlug(slugify(v));
