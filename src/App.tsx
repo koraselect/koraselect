@@ -442,6 +442,7 @@ export const App: React.FC = () => {
           onLogout={handleAdminLogout}
           onReturnToStore={() => navigateTo('/')}
           activeRoute="store"
+          showSearch={false}
           onNavigateHome={() => navigateTo('/')}
           onNavigateBlog={() => navigateTo('/blog')}
         />
