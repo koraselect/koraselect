@@ -764,7 +764,7 @@ export const App: React.FC = () => {
             <div className="carousel-track">
               {carouselProducts.map((prod, idx) => (
                 <div className="carousel-cell" key={idx}>
-                  {productNode(prod)}
+                  <ProductCard {...cardPropsFor(prod)} />
                 </div>
               ))}
             </div>
@@ -1030,12 +1030,35 @@ export const App: React.FC = () => {
         .carousel-track {
           display: flex;
           width: max-content;
+          align-items: stretch;
         }
 
         .carousel-cell {
           width: 300px;
           flex: none;
           margin-right: 20px;
+          display: flex;
+          align-self: stretch;
+        }
+
+        .carousel-cell .product-card {
+          width: 100%;
+          height: 100%;
+        }
+
+        .carousel-cell .card-title {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .carousel-cell .card-subtitle {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          min-height: 2.36em;
         }
 
         .catalog-layout {
