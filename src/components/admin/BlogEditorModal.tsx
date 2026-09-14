@@ -582,6 +582,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                         onChange={(e) => setTopic(e.target.value)}
                         rows={2}
                         className="ai-topic-input"
+                        autoFocus
                       />
                       <button className="btn-ai-generate" onClick={handleGenerateAI} disabled={aiLoading}>
                         {aiLoading ? <Loader2 size={16} className="spin" /> : <Sparkles size={16} />}
@@ -771,7 +772,6 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                     placeholder="Ej: Las mejores maletas de cabina para viajar ligero"
                     value={title}
                     onChange={(e) => handleSetTitle(e.target.value)}
-                    autoFocus
                   />
                 </div>
                 <div className="form-group col-span-2">
