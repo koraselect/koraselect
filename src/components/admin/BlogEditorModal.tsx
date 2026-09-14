@@ -5,6 +5,7 @@ import { generatePostWithAI } from '../../lib/ai';
 import { scrapeUrl, ScrapeResult } from '../../lib/scrape';
 import { lookupAmazonProduct } from '../../lib/amazon';
 import { BUILD_SHA } from '../../lib/build';
+import { useLockBodyScroll } from '../../lib/useLockBodyScroll';
 import {
   X, Save, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronUp, ChevronDown, Trash2, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle,
@@ -92,6 +93,8 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   onClose
 }) => {
   const isEditing = !!postToEdit;
+
+  useLockBodyScroll();
 
   // ---- Flujo por pasos ----
   const [previewMode, setPreviewMode] = useState(false);
@@ -1197,6 +1200,12 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           margin-right: 10px;
           align-self: center;
           white-space: nowrap;
+        }
+
+        .blog-steps-wrap {
+          padding: 16px 28px 0;
+          border-bottom: 1px solid var(--border-color);
+          background: #fff;
         }
 
         .blog-stepper {

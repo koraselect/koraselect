@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLockBodyScroll } from '../../lib/useLockBodyScroll';
 import { Product, Category, ColorOption, ProductHighlight, ProductVideo } from '../../types/product';
 import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle, ZoomIn, Check } from 'lucide-react';
 import { ProductCard } from '../ProductCard';
@@ -24,6 +25,8 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
 
   // Step state (1: Info Básica, 2: Colores y Medidas, 3: Destacados y A+, 4: Previsualización)
   const [currentStep, setCurrentStep] = useState<number>(1);
+
+  useLockBodyScroll();
 
   // Form State
   const [title, setTitle] = useState(productToEdit?.title || '');

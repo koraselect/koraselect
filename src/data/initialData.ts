@@ -6,7 +6,8 @@ export const INITIAL_AFFILIATE_CONFIG: AffiliateConfig = {
   siteName: 'KORASELECT',
   siteTagline: 'Ofertas Curadas de Amazon',
   defaultCommissionRate: 6.0,
-  customBannerText: 'Selección Curada de Amazon'
+  customBannerText: 'Selección Curada de Amazon',
+  logoUrl: '/logo-koraselect.png'
 };
 
 export const CATEGORIES: Category[] = [

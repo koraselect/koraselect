@@ -69,4 +69,5 @@ export interface AffiliateConfig {
   siteTagline: string;
   defaultCommissionRate: number;
   customBannerText?: string;
+  logoUrl?: string;
 }

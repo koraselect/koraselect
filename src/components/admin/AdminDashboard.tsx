@@ -6,7 +6,7 @@ import { ConfirmActionModal } from './ConfirmActionModal';
 import { BlogManager } from './BlogManager';
 import { BUILD_SHA } from '../../lib/build';
 import { 
-  ShoppingBag, Plus, Search, Edit3, Trash2, ExternalLink, 
+  Plus, Search, Edit3, Trash2, ExternalLink, 
   Tag, LogOut, ArrowUpRight,
   Copy, RotateCcw, Check, Layers, AlertCircle, Newspaper
 } from 'lucide-react';
@@ -143,7 +143,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="container admin-nav-container">
           <div className="admin-brand" onClick={onReturnToStore} style={{ cursor: 'pointer' }} title="Ir al Front Landing Principal">
             <div className="admin-logo-circle">
-              <ShoppingBag size={20} />
+              <img src={affiliateConfig.logoUrl || '/logo-koraselect.png'} alt="KORASELECT" className="admin-logo-mark" />
             </div>
             <div>
               <span className="brand-name font-heading">KORASELECT ADMIN</span>
@@ -474,6 +474,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
+        }
+
+        .admin-logo-mark {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .admin-nav-actions {

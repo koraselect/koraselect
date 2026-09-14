@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, User, Key, ShoppingBag, ArrowLeft, ShieldAlert, Loader2 } from 'lucide-react';
+import { Lock, User, Key, ArrowLeft, ShieldAlert, Loader2 } from 'lucide-react';
 import { verifyAdmin } from '../../lib/db';
 
 interface AdminLoginProps {
@@ -48,7 +48,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
 
         <div className="login-header" onClick={onReturnToStore} style={{ cursor: 'pointer' }} title="Ir a la Portada Principal (Landing)">
           <div className="login-logo-circle">
-            <ShoppingBag size={24} />
+            <img src="/logo-koraselect.png" alt="KORASELECT" className="login-logo-mark" />
           </div>
           <h1 className="login-title font-heading">Portal Administrativo</h1>
           <p className="login-sub">Gestión de Productos, Blog & Colecciones de Amazon Afiliados</p>
@@ -149,6 +149,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onReturn
           align-items: center;
           justify-content: center;
           margin: 0 auto 14px auto;
+          overflow: hidden;
+        }
+
+        .login-logo-mark {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .login-title {

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { AffiliateConfig } from '../types/product';
-import { X, Tag, Check, Copy, Globe, Code, Save, ShieldCheck } from 'lucide-react';
+import { X, Tag, Check, Copy, Globe, Code, Save, ShieldCheck, Upload, RefreshCw, Image as ImageIcon } from 'lucide-react';
+
+const DEFAULT_LOGO = '/logo-koraselect.png';
 
 interface AffiliateSettingsModalProps {
   config: AffiliateConfig;
@@ -22,9 +24,29 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
   const [siteName, setSiteName] = useState(config.siteName || 'KORASELECT');
   const [siteTagline, setSiteTagline] = useState(config.siteTagline || 'Ofertas Curadas de Amazon');
   const [customBannerText, setCustomBannerText] = useState(config.customBannerText || 'Selección Curada de Amazon');
+  const [logoUrl, setLogoUrl] = useState<string>(config.logoUrl || DEFAULT_LOGO);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setLogoError(null);
+    if (!file.type.startsWith('image/')) {
+      setLogoError('El archivo debe ser una imagen (PNG, JPG, SVG o WebP).');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('La imagen no puede superar los 2 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setLogoUrl(String(reader.result));
+    reader.onerror = () => setLogoError('No se pudo leer la imagen.');
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +62,8 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
       defaultCommissionRate: parseFloat(commissionRate) || 6.0,
       siteName: siteName.trim() || 'KORASELECT',
       siteTagline: siteTagline.trim() || 'Ofertas Curadas de Amazon',
-      customBannerText: customBannerText.trim()
+      customBannerText: customBannerText.trim(),
+      logoUrl
     });
 
     onClose();
@@ -154,6 +177,41 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
             {/* TAB 2: BRANDING & NOMBRE */}
             {activeTab === 'branding' && (
               <div className="tab-pane animate-fade-in">
+                <div className="form-group mb-4">
+                  <label>Logo de la Tienda</label>
+                  <div className="logo-uploader">
+                    <div className="logo-preview-box">
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="Logo de la tienda" className="logo-preview-img" />
+                      ) : (
+                        <ImageIcon size={22} className="logo-preview-icon" />
+                      )}
+                    </div>
+                    <div className="logo-uploader-actions">
+                      <label className="btn-logo-upload">
+                        <Upload size={14} />
+                        <span>Subir Logo</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                          onChange={handleLogoUpload}
+                          hidden
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="btn-logo-reset"
+                        onClick={() => { setLogoUrl(DEFAULT_LOGO); setLogoError(null); }}
+                      >
+                        <RefreshCw size={14} />
+                        <span>Restaurar logo por defecto</span>
+                      </button>
+                    </div>
+                  </div>
+                  {logoError && <span className="helper-text logo-error">{logoError}</span>}
+                  <span className="helper-text">PNG / JPG / SVG / WebP · Máx 2 MB. Se guarda en la configuración y se aplica al guardar.</span>
+                </div>
+
                 <div className="form-group mb-4">
                   <label>Nombre de la Tienda / Marca *</label>
                   <input
@@ -361,6 +419,82 @@ export const AffiliateSettingsModal: React.FC<AffiliateSettingsModalProps> = ({
           display: flex;
           flex-direction: column;
           flex: 1;
+        }
+
+        .logo-uploader {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-top: 6px;
+        }
+
+        .logo-preview-box {
+          width: 64px;
+          height: 64px;
+          border-radius: 14px;
+          border: 1px solid var(--border-color);
+          background: var(--bg-main);
+          display: grid;
+          place-items: center;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+
+        .logo-preview-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .logo-preview-icon {
+          color: var(--text-light);
+        }
+
+        .logo-uploader-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .btn-logo-upload {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background-color: var(--text-dark);
+          color: #ffffff;
+          border: none;
+          padding: 8px 14px;
+          border-radius: var(--border-radius-pill);
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          width: fit-content;
+        }
+
+        .btn-logo-reset {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: none;
+          border: 1px solid var(--border-color);
+          color: var(--text-muted);
+          padding: 6px 14px;
+          border-radius: var(--border-radius-pill);
+          font-size: 0.78rem;
+          font-weight: 600;
+          cursor: pointer;
+          width: fit-content;
+        }
+
+        .btn-logo-reset:hover {
+          border-color: var(--text-dark);
+          color: var(--text-dark);
+        }
+
+        .logo-error {
+          color: #c62828;
+          display: block;
+          margin-top: 6px;
         }
 
         .mb-4 {

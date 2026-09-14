@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Logo - Redirects to Front Landing */}
         <div className="brand-logo" onClick={handleLogoClick} title="Ir a la Portada Principal (Front Landing)">
           <div className="logo-icon-wrapper">
-            <img src="/logo-koraselect.png" alt={affiliateConfig.siteName || 'KORASELECT'} className="logo-mark" />
+            <img src={affiliateConfig.logoUrl || '/logo-koraselect.png'} alt={affiliateConfig.siteName || 'KORASELECT'} className="logo-mark" />
           </div>
           <div>
             <span className="brand-name font-heading">{affiliateConfig.siteName || 'KORASELECT'}</span>
