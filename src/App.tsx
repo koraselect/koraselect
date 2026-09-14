@@ -18,7 +18,7 @@ import { BlogPostPage } from './components/Blog/BlogPostPage';
 // Admin Components
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { Layers, Sparkles, PlusCircle, ArrowRight } from 'lucide-react';
+import { Layers, Sparkles, PlusCircle, ArrowRight, Search, X } from 'lucide-react';
 
 // Data layer (Supabase)
 import {
@@ -446,6 +446,24 @@ export const App: React.FC = () => {
           onNavigateBlog={() => navigateTo('/blog')}
         />
 
+        {/* Barra de búsqueda estilo Gemini, centrada sobre el selector de categorías */}
+        <div className="market-search-wrap">
+          <div className="gemini-searchbar">
+            <Search size={20} className="gemini-search-icon" />
+            <input
+              type="text"
+              placeholder="Busca productos por nombre, ASIN o categoría en el Market…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="gemini-clear" onClick={() => setSearchQuery('')} title="Limpiar búsqueda">
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+
         {catalogSection(filteredProducts, false)}
 
         <Footer onNavigate={navigateTo} />
@@ -499,6 +517,66 @@ export const App: React.FC = () => {
             flex: 1;
           }
 
+          /* ---- Barra de búsqueda estilo Gemini ---- */
+          .market-search-wrap {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 36px 0 24px;
+          }
+
+          .gemini-searchbar {
+            width: 75%;
+            max-width: 820px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-pill);
+            padding: 15px 24px;
+            box-shadow: var(--shadow-md);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+          }
+
+          .gemini-searchbar:focus-within {
+            border-color: #c29b68;
+            box-shadow: 0 0 0 4px rgba(194, 155, 104, 0.15), var(--shadow-md);
+          }
+
+          .gemini-search-icon {
+            color: var(--text-muted);
+            flex-shrink: 0;
+          }
+
+          .gemini-searchbar input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: var(--font-body);
+            font-size: 1.02rem;
+            color: var(--text-dark);
+          }
+
+          .gemini-searchbar input::placeholder {
+            color: var(--text-muted);
+          }
+
+          .gemini-clear {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+          }
+
+          .gemini-clear:hover {
+            color: var(--text-dark);
+          }
+
           .catalog-layout {
             display: grid;
             gap: 28px;
@@ -539,6 +617,13 @@ export const App: React.FC = () => {
 
           .mt-4 {
             margin-top: 16px;
+          }
+
+          @media (max-width: 640px) {
+            .gemini-searchbar {
+              width: 100%;
+              padding: 12px 18px;
+            }
           }
         `}</style>
       </div>

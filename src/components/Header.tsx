@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
             href="/"
             className={`nav-link ${activeRoute === 'store' ? 'active' : ''}`}
             onClick={handleNavClick('/')}
-            title="Ir a la tienda"
+            title="Ir al inicio"
           >
             Inicio
           </a>
