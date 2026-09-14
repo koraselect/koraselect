@@ -18,7 +18,7 @@ import { BlogPostPage } from './components/Blog/BlogPostPage';
 // Admin Components
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { Layers, Sparkles, PlusCircle } from 'lucide-react';
+import { Layers, Sparkles, PlusCircle, ArrowRight } from 'lucide-react';
 
 // Data layer (Supabase)
 import {
@@ -79,9 +79,10 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // 5. Routing & View State (Store / Admin / Blog / BlogPost)
+  // 5. Routing & View State (Store / Market / Admin / Blog / BlogPost)
   type Route =
     | { name: 'store' }
+    | { name: 'market' }
     | { name: 'admin' }
     | { name: 'blog' }
     | { name: 'blogPost'; slug: string };
@@ -89,6 +90,7 @@ export const App: React.FC = () => {
   const getPathnameRoute = (): Route => {
     const path = window.location.pathname;
     if (path === '/admin' || path.startsWith('/admin/')) return { name: 'admin' };
+    if (path === '/market' || path.startsWith('/market/')) return { name: 'market' };
     const blogMatch = path.match(/^\/blog\/([a-z0-9-]+)\/?$/i);
     if (blogMatch) return { name: 'blogPost', slug: blogMatch[1] };
     if (path.startsWith('/blog')) return { name: 'blog' };
@@ -246,6 +248,76 @@ export const App: React.FC = () => {
     }
   };
 
+  // En el home se muestran solo unas filas de productos; el botón lleva al Market completo.
+  const HOME_PRODUCT_LIMIT = 8;
+
+  const cardPropsFor = (prod: Product) => ({
+    key: prod.id,
+    product: prod,
+    affiliateTag: affiliateConfig.tag,
+    onOpenDetailModal: setActiveDetailProduct,
+    onTrackClick: handleTrackClick
+  });
+
+  const productNode = (prod: Product) => {
+    if (viewMode === 'grid') return <GridProductCard {...cardPropsFor(prod)} />;
+    if (viewMode === 'aplus') return <AplusProductCard {...cardPropsFor(prod)} />;
+    return <ProductCard {...cardPropsFor(prod)} />;
+  };
+
+  const catalogSection = (items: Product[], viewAll?: boolean) => (
+    <main id="catalog-section" className="main-content">
+      <CategoryFilter
+        categories={CATEGORIES}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        totalProductsCount={filteredProducts.length}
+      />
+
+      <div className="container">
+        {items.length === 0 ? (
+          <div className="empty-catalog-box">
+            <Sparkles size={36} className="empty-icon" />
+            <h3 className="font-heading text-xl">No hay productos en esta selección</h3>
+            {isAdminAuthenticated ? (
+              <>
+                <p>Agrega y gestiona productos del catálogo desde tu Panel Administrativo.</p>
+                <button
+                  className="btn-amazon mt-4"
+                  onClick={() => navigateTo('/admin')}
+                >
+                  <PlusCircle size={18} />
+                  <span>Ir al Dashboard Admin para Subir Productos</span>
+                </button>
+              </>
+            ) : (
+              <p>Vuelve a intentarlo en unos momentos o explora otras colecciones.</p>
+            )}
+          </div>
+        ) : (
+          <div className={`catalog-layout layout-${viewMode}`}>
+            {items.map((prod) => productNode(prod))}
+          </div>
+        )}
+
+        {viewAll && (
+          <div className="view-all-row">
+            <button className="btn-amazon view-all-btn" onClick={() => navigateTo('/market')}>
+              <span>Ver todo el catálogo en el Market</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+
+  const latestPosts = [...blogPosts]
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 3);
+
   // RENDER LOADING
   if (isLoading) {
     return (
@@ -356,7 +428,124 @@ export const App: React.FC = () => {
     );
   }
 
-  // RENDER PUBLIC STORE VIEW
+  // RENDER MARKET (todo el catálogo publicado, estilo marketplace)
+  if (route.name === 'market') {
+    return (
+      <div className="app-main">
+        <Header
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          affiliateConfig={affiliateConfig}
+          isAdminAuthenticated={isAdminAuthenticated}
+          onOpenSettings={() => setIsSettingsModalOpen(true)}
+          onOpenAdmin={() => navigateTo('/admin')}
+          onLogout={handleAdminLogout}
+          onReturnToStore={() => navigateTo('/')}
+          activeRoute="store"
+          onNavigateHome={() => navigateTo('/')}
+          onNavigateBlog={() => navigateTo('/blog')}
+        />
+
+        {catalogSection(filteredProducts, false)}
+
+        <Footer onNavigate={navigateTo} />
+
+        <ProductDetailModal
+          product={activeDetailProduct}
+          affiliateTag={affiliateConfig.tag}
+          onClose={() => setActiveDetailProduct(null)}
+          onTrackClick={handleTrackClick}
+        />
+
+        {isSettingsModalOpen && (
+          <AffiliateSettingsModal
+            config={affiliateConfig}
+            onSaveConfig={applyAffiliateConfig}
+            onClose={() => setIsSettingsModalOpen(false)}
+          />
+        )}
+        {loadError && (
+          <div className="toast-error">
+            {loadError}
+            <style>{`
+              .toast-error {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #ffebee;
+                color: #c62828;
+                padding: 12px 20px;
+                border-radius: var(--border-radius-pill);
+                font-size: 0.85rem;
+                font-weight: 600;
+                box-shadow: var(--shadow-md);
+                z-index: 1200;
+                max-width: 90vw;
+                text-align: center;
+              }
+            `}</style>
+          </div>
+        )}
+
+        <style>{`
+          .app-main {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .main-content {
+            flex: 1;
+          }
+
+          .catalog-layout {
+            display: grid;
+            gap: 28px;
+          }
+
+          .catalog-layout.layout-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+          }
+
+          .catalog-layout.layout-collage {
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+          }
+
+          .catalog-layout.layout-aplus {
+            grid-template-columns: 1fr;
+            max-width: 980px;
+            margin: 0 auto;
+            gap: 40px;
+          }
+
+          .empty-catalog-box {
+            text-align: center;
+            padding: 80px 20px;
+            background-color: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            border: 1px dashed var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+          }
+
+          .empty-icon {
+            color: #c29b68;
+          }
+
+          .mt-4 {
+            margin-top: 16px;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // RENDER PUBLIC STORE VIEW (home: últimos posts + filas destacadas)
   return (
     <div className="app-main">
       {/* Navbar */}
@@ -380,61 +569,56 @@ export const App: React.FC = () => {
         onExploreClick={scrollToCatalog}
       />
 
-      {/* Catalog & Filter Section */}
-      <main id="catalog-section" className="main-content">
-        <CategoryFilter
-          categories={CATEGORIES}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          totalProductsCount={filteredProducts.length}
-        />
+      {/* Últimos posts del blog */}
+      {latestPosts.length > 0 && (
+        <section className="home-blog-section">
+          <div className="container">
+            <div className="home-section-head">
+              <div>
+                <span className="blog-kicker">Blog & Guías</span>
+                <h2 className="font-heading">Últimas publicaciones</h2>
+              </div>
+              <button className="home-view-all-link" onClick={() => navigateTo('/blog')}>
+                Ver todos
+                <ArrowRight size={15} />
+              </button>
+            </div>
 
-        {/* Product Showcase */}
+            <div className="home-blog-grid">
+              {latestPosts.map((post) => (
+                <article
+                  key={post.slug}
+                  className="home-blog-card"
+                  onClick={() => navigateTo(`/blog/${post.slug}`)}
+                >
+                  <div className="home-blog-media">
+                    <img src={post.coverImage} alt={post.title} loading="lazy" />
+                    <span className="blog-card-category">{post.category}</span>
+                  </div>
+                  <div className="home-blog-body">
+                    <h3 className="font-heading">{post.title}</h3>
+                    <p className="home-blog-excerpt">{post.excerpt}</p>
+                    <span className="home-blog-link">
+                      Leer reseña / guía
+                      <ArrowRight size={14} />
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Productos destacados (solo unas filas) */}
+      <section className="home-products-head">
         <div className="container">
-          {filteredProducts.length === 0 ? (
-            <div className="empty-catalog-box">
-              <Sparkles size={36} className="empty-icon" />
-              <h3 className="font-heading text-xl">No hay productos en esta selección</h3>
-              {isAdminAuthenticated ? (
-                <>
-                  <p>Agrega y gestiona productos del catálogo desde tu Panel Administrativo.</p>
-                  <button 
-                    className="btn-amazon mt-4" 
-                    onClick={() => navigateTo('/admin')}
-                  >
-                    <PlusCircle size={18} />
-                    <span>Ir al Dashboard Admin para Subir Productos</span>
-                  </button>
-                </>
-              ) : (
-                <p>Vuelve a intentarlo en unos momentos o explora otras colecciones.</p>
-              )}
-            </div>
-          ) : (
-            <div className={`catalog-layout layout-${viewMode}`}>
-              {filteredProducts.map((prod) => {
-                const cardProps = {
-                  key: prod.id,
-                  product: prod,
-                  affiliateTag: affiliateConfig.tag,
-                  onOpenDetailModal: setActiveDetailProduct,
-                  onTrackClick: handleTrackClick
-                };
-
-                if (viewMode === 'grid') {
-                  return <GridProductCard {...cardProps} />;
-                }
-                if (viewMode === 'aplus') {
-                  return <AplusProductCard {...cardProps} />;
-                }
-                return <ProductCard {...cardProps} />;
-              })}
-            </div>
-          )}
+          <span className="blog-kicker">Catálogo</span>
+          <h2 className="font-heading">Productos destacados en la tienda</h2>
         </div>
-      </main>
+      </section>
+
+      {catalogSection(filteredProducts.slice(0, HOME_PRODUCT_LIMIT), true)}
 
       {/* Footer with Amazon Affiliate Legal Disclosure & Admin Link */}
       <Footer onNavigate={navigateTo} />
@@ -495,6 +679,165 @@ export const App: React.FC = () => {
 
         .main-content {
           flex: 1;
+        }
+
+        /* ---- Sección de últimos posts ---- */
+        .blog-kicker {
+          display: inline-block;
+          background: #fff3e0;
+          color: #e65100;
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 6px 14px;
+          border-radius: var(--border-radius-pill);
+          margin-bottom: 10px;
+        }
+
+        .home-blog-section {
+          padding: 48px 0 8px;
+        }
+
+        .home-section-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+
+        .home-section-head h2 {
+          font-size: 1.7rem;
+          margin: 4px 0 0;
+        }
+
+        .home-view-all-link {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: none;
+          border: none;
+          padding: 0;
+          color: var(--text-dark);
+          font-family: var(--font-body);
+          font-size: 0.92rem;
+          font-weight: 700;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
+          transition: all var(--transition-fast);
+        }
+
+        .home-view-all-link:hover {
+          border-bottom-color: var(--text-dark);
+        }
+
+        .home-blog-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 24px;
+        }
+
+        .home-blog-card {
+          background-color: var(--bg-card);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-lg);
+          overflow: hidden;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          transition: all var(--transition-fast);
+        }
+
+        .home-blog-card:hover {
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-md);
+          border-color: var(--text-dark);
+        }
+
+        .home-blog-media {
+          position: relative;
+          aspect-ratio: 16 / 9;
+          overflow: hidden;
+        }
+
+        .home-blog-media img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.4s ease;
+        }
+
+        .home-blog-card:hover .home-blog-media img {
+          transform: scale(1.05);
+        }
+
+        .blog-card-category {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          background: rgba(30, 30, 30, 0.82);
+          color: #fff;
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          padding: 5px 12px;
+          border-radius: var(--border-radius-pill);
+          backdrop-filter: blur(4px);
+        }
+
+        .home-blog-body {
+          padding: 18px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex: 1;
+        }
+
+        .home-blog-body h3 {
+          font-size: 1.12rem;
+          line-height: 1.3;
+          margin: 0;
+        }
+
+        .home-blog-excerpt {
+          color: var(--text-muted);
+          font-size: 0.88rem;
+          line-height: 1.55;
+          margin: 0;
+          flex: 1;
+        }
+
+        .home-blog-link {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: var(--text-dark);
+          font-size: 0.88rem;
+          font-weight: 700;
+        }
+
+        /* ---- Encabezado de destacados ---- */
+        .home-products-head {
+          padding: 40px 0 0;
+        }
+
+        .home-products-head h2 {
+          font-size: 1.7rem;
+          margin: 4px 0 0;
+        }
+
+        /* ---- Botón Ver todo ---- */
+        .view-all-row {
+          display: flex;
+          justify-content: center;
+          padding: 34px 0 8px;
+        }
+
+        .view-all-btn {
+          padding: 13px 28px;
+          font-size: 1rem;
         }
 
         .catalog-layout {
