@@ -62,15 +62,23 @@ const hasContent = (blocks: BlogBlock[]) =>
     return (stripHtml(b.text || '') || '').length > 0;
   });
 
-// Cuando se genera con productos seleccionados, la entrada gira SOLO en torno a
-// esos productos: se descartan tarjetas de otros catálogo y se garantiza al menos
-// una tarjeta del primer producto elegido.
+// El mismo producto nunca debe repetirse como tarjeta: la IA trabaja con una
+// tarjeta de producto por producto destacado. Si hay selección, además la
+// entrada gira SOLO en torno a esos productos (se descartan tarjetas de otro
+// catálogo) y se garantiza al menos una tarjeta del primer producto elegido.
 const normalizeHighlightedBlocks = (blocks: BlogBlock[], selected: Product[]): BlogBlock[] => {
   const allowed = new Set(selected.map((p) => (p.amazonUrl || p.asin || '').trim().toLowerCase()));
-  const kept = blocks.filter(
-    (b) => b.type !== 'product' || (!!b.amazonUrl && allowed.has(b.amazonUrl.trim().toLowerCase()))
-  );
-  const hasPickedCard = kept.some((b) => b.type === 'product');
+  const seen = new Set<string>();
+  const kept = blocks.filter((b) => {
+    if (b.type !== 'product') return true;
+    const url = (b.amazonUrl || '').trim().toLowerCase();
+    if (!url) return true;
+    if (selected.length > 0 && !allowed.has(url)) return false;
+    if (seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
+  const hasPickedCard = selected.length === 0 || kept.some((b) => b.type === 'product' && allowed.has((b.amazonUrl || '').trim().toLowerCase()));
   if (!hasPickedCard && selected.length > 0) {
     const p = selected[0];
     const card: BlogBlock = {
@@ -383,6 +391,10 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         if (!title.trim()) handleSetTitle(rawTopic || (hasSelected ? `Reseña: ${selectedProducts[0].title}` : ''));
         if (!coverImage.trim() && hasSelected && selectedProducts[0].mainImage) setCoverImage(selectedProducts[0].mainImage);
         if (!excerpt.trim()) setExcerpt(res.excerpt?.trim() || deriveExcerpt(finalBlocks) || (hasSelected ? `Guía completa sobre ${selectedProducts[0].title}.` : ''));
+        if (hasSelected && (category === '' || category === 'General')) {
+          const pickedCategory = selectedProducts[0]?.category?.trim();
+          if (pickedCategory && pickedCategory !== 'General' && pickedCategory.toLowerCase() !== 'all') setCategory(pickedCategory);
+        }
         const engineLabel = res.engine === 'gemini' ? 'Gemini (Google)' : 'Grok (Groq)';
         setAiMessage({ type: 'ok', text: `Borrador generado con ${engineLabel}. Revisa, edita y ajusta antes de guardar.` });
         setStep(3);
@@ -509,6 +521,11 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   };
 
   const productCategories = Array.from(new Set(products.map((p) => p.category).filter(Boolean))).sort();
+
+  // Categorías disponibles para el post: General + sugerencias + las reales del catálogo.
+  const allBlogCategories = Array.from(
+    new Set(['General', ...CATEGORY_SUGGESTIONS, ...productCategories].filter((c) => c && c !== 'all'))
+  ).sort();
 
   const pickedProductFilter = () => {
     const q = prodPickSearch.trim().toLowerCase();
@@ -917,16 +934,22 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                 </div>
                 <div className="form-group">
                   <label>Categoría</label>
-                  <input
-                    type="text"
-                    list="blg-cat-suggestions"
-                    placeholder="Equipaje, Hidratación…"
-                    value={category}
+                  <select
+                    className="category-select"
+                    value={allBlogCategories.includes(category) ? category : 'General'}
                     onChange={(e) => setCategory(e.target.value)}
-                  />
-                  <datalist id="blg-cat-suggestions">
-                    {CATEGORY_SUGGESTIONS.map((c) => <option key={c} value={c} />)}
-                  </datalist>
+                  >
+                    {allBlogCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  {!allBlogCategories.includes(category) && category && category !== 'General' && (
+                    <input
+                      type="text"
+                      className="category-custom"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      placeholder="Categoría personalizada…"
+                    />
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Fecha de publicación</label>
@@ -1819,6 +1842,28 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         /* ---- Metadatos ---- */
         .blog-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .col-span-2 { grid-column: span 2; }
+
+        .category-select {
+          width: 100%;
+          padding: 12px 14px;
+          border-radius: var(--border-radius-md);
+          border: 1px solid var(--border-color);
+          background-color: var(--bg-card);
+          font-family: var(--font-body);
+          font-size: 0.95rem;
+          color: var(--text-dark);
+        }
+        .category-custom {
+          width: 100%;
+          margin-top: 8px;
+          padding: 10px 12px;
+          border-radius: var(--border-radius-md);
+          border: 1px solid var(--border-color);
+          background-color: var(--bg-card);
+          font-family: var(--font-body);
+          font-size: 0.9rem;
+          color: var(--text-dark);
+        }
 
         .blog-cover-preview img {
           width: 100%;
