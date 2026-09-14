@@ -271,6 +271,13 @@ button {
   padding: 0 24px;
 }
 
+/* App shell: flex column de ancho completo */
+.app-main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0 16px;

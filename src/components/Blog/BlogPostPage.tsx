@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { ArrowLeft, Calendar, Clock, Star, ExternalLink, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowUp, Calendar, Clock, Star, ExternalLink, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { Product } from '../../types/product';
 import { BlogBlock, BlogPost } from '../../types/blog';
 import { getAffiliateUrl, AMAZON_CTA_TEXT, AMAZON_REL } from '../../utils/affiliate';
@@ -17,20 +17,21 @@ const formatDate = (iso: string) => {
   return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
+const buildFakeProduct = (block: Extract<BlogBlock, { type: 'product' }>): Product => ({
+  id: block.amazonUrl,
+  title: block.title,
+  subtitle: block.excerpt,
+  category: 'all',
+  price: 0,
+  rating: block.rating ?? 0,
+  reviewsCount: block.reviewsCount ?? 0,
+  amazonUrl: block.amazonUrl,
+  mainImage: block.image,
+  highlights: [],
+  description: block.excerpt
+});
+
 const ProductBlock: React.FC<{ block: Extract<BlogBlock, { type: 'product' }>; tag: string; onTrackClick: (p: Product) => void }> = ({ block, tag, onTrackClick }) => {
-  const fakeProduct: Product = {
-    id: block.amazonUrl,
-    title: block.title,
-    subtitle: block.excerpt,
-    category: 'all',
-    price: 0,
-    rating: block.rating ?? 0,
-    reviewsCount: block.reviewsCount ?? 0,
-    amazonUrl: block.amazonUrl,
-    mainImage: block.image,
-    highlights: [],
-    description: block.excerpt
-  };
 
   return (
     <div className="blog-product-card">
@@ -56,7 +57,7 @@ const ProductBlock: React.FC<{ block: Extract<BlogBlock, { type: 'product' }>; t
           href={getAffiliateUrl(block.amazonUrl, tag)}
           target="_blank"
           rel={AMAZON_REL}
-          onClick={() => onTrackClick(fakeProduct)}
+          onClick={() => onTrackClick(buildFakeProduct(block))}
         >
           <span>{AMAZON_CTA_TEXT}</span>
           <ExternalLink size={15} />
@@ -69,12 +70,44 @@ const ProductBlock: React.FC<{ block: Extract<BlogBlock, { type: 'product' }>; t
 export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affiliateTag, onBack, onTrackClick }) => {
   const post = posts.find((p) => p.slug === slug) || null;
 
+  // Lectura con scroll propio: barra de progreso + CTA al llegar al final.
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLElement>(null);
+  const [atEnd, setAtEnd] = useState(false);
+  const [progress, setProgress] = useState(0);
+
   useEffect(() => {
     document.title = post ? `${post.title} · KORASELECT` : 'Artículo no encontrado · KORASELECT';
     return () => {
       document.title = 'KORASELECT';
     };
   }, [post]);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller || !post) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setAtEnd(entry.isIntersecting),
+      { root: scroller, threshold: 0.2 }
+    );
+    if (endRef.current) io.observe(endRef.current);
+    return () => io.disconnect();
+  }, [post]);
+
+  const handleScroll = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const max = el.scrollHeight - el.clientHeight;
+    setProgress(max > 0 ? Math.min(100, Math.round((el.scrollTop / max) * 100)) : 0);
+  };
+
+  const scrollReaderToTop = () => {
+    scrollerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const ctaProduct = post?.body.find((b) => b.type === 'product');
+  const ctaProductBlock = ctaProduct && ctaProduct.type === 'product' ? ctaProduct : undefined;
+  const ctaUrl = ctaProductBlock ? getAffiliateUrl(ctaProductBlock.amazonUrl, affiliateTag) : undefined;
 
   if (!post) {
     return (
@@ -95,93 +128,247 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
 
   return (
     <main className="blog-post main-content">
-      <div className="container blog-post-container">
-        {/* Back Link */}
+      {/* Barra superior de lectura */}
+      <div className="blog-reader-head">
         <button className="blog-back-btn" onClick={onBack}>
           <ArrowLeft size={16} />
           <span>Volver al blog</span>
         </button>
+        <span className="blog-reader-meta">
+          {post.category} · {post.readTime} de lectura
+        </span>
+      </div>
 
-        {/* Post Header */}
-        <header className="blog-post-header">
-          <span className="blog-post-category">{post.category}</span>
-          <h1 className="font-heading">{post.title}</h1>
-          <div className="blog-post-meta">
-            <span><Calendar size={14} /> {formatDate(post.date)}</span>
-            <span><Clock size={14} /> {post.readTime} de lectura</span>
+      {/* Barra de progreso de lectura */}
+      <div className="blog-progress">
+        <div className="blog-progress-bar" style={{ width: `${progress}%` }} />
+      </div>
+
+      {/* Contenedor de lectura con scroll propio */}
+      <div className="blog-scroller" ref={scrollerRef} onScroll={handleScroll}>
+        <div className="container blog-post-container">
+          {/* Post Header */}
+          <header className="blog-post-header">
+            <span className="blog-post-category">{post.category}</span>
+            <h1 className="font-heading">{post.title}</h1>
+            <div className="blog-post-meta">
+              <span><Calendar size={14} /> {formatDate(post.date)}</span>
+              <span><Clock size={14} /> {post.readTime} de lectura</span>
+            </div>
+          </header>
+
+          {/* Cover Image */}
+          <figure className="blog-post-cover">
+            <img src={post.coverImage} alt={post.title} />
+          </figure>
+
+          {/* Body Blocks */}
+          <div className="blog-post-body">
+            {post.body.map((block, i) => {
+              switch (block.type) {
+                case 'h2':
+                  return <h2 key={i} className="font-heading" style={{ textAlign: block.align || 'left' }} dangerouslySetInnerHTML={{ __html: block.text }} />;
+                case 'p':
+                  return <p key={i} style={{ textAlign: block.align || 'left' }} dangerouslySetInnerHTML={{ __html: block.text }} />;
+                case 'list':
+                  return (
+                    <ul key={i} style={{ textAlign: block.align || 'left' }}>
+                      {block.items.map((item, j) => (
+                        <li key={j} dangerouslySetInnerHTML={{ __html: item }} />
+                      ))}
+                    </ul>
+                  );
+                case 'quote':
+                  return (
+                    <blockquote key={i} style={{ textAlign: block.align || 'left' }}>
+                      <span className="quote-mark">“</span>
+                      <span dangerouslySetInnerHTML={{ __html: block.text }} />
+                    </blockquote>
+                  );
+                case 'product':
+                  return (
+                    <ProductBlock
+                      key={i}
+                      block={block}
+                      tag={affiliateTag}
+                      onTrackClick={onTrackClick}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })}
           </div>
-        </header>
 
-        {/* Cover Image */}
-        <figure className="blog-post-cover">
-          <img src={post.coverImage} alt={post.title} />
-        </figure>
+          {/* Post Footer con CTA al final de la lectura */}
+          <footer className="blog-post-footer" ref={endRef}>
+            <div className={`blog-end-cta ${atEnd ? 'show' : ''}`}>
+              <span className="blog-end-cta-eyebrow">Fin de la lectura</span>
+              <h3 className="font-heading">¿Ya tienes tu favorito? Llévalo hoy mismo</h3>
+              {ctaUrl && (
+                <a
+                  className={`blog-end-amazon-btn ${atEnd ? 'glow' : ''}`}
+                  href={ctaUrl}
+                  target="_blank"
+                  rel={AMAZON_REL}
+                  onClick={() => ctaProductBlock && onTrackClick(buildFakeProduct(ctaProductBlock))}
+                >
+                  <ShoppingBag size={18} />
+                  <span>Ver en Amazon</span>
+                  <ExternalLink size={15} />
+                </a>
+              )}
+              <button className="blog-end-top-btn" onClick={scrollReaderToTop}>
+                <ArrowUp size={16} />
+                <span>Volver al inicio de la lectura</span>
+              </button>
+            </div>
 
-        {/* Body Blocks */}
-        <div className="blog-post-body">
-          {post.body.map((block, i) => {
-            switch (block.type) {
-              case 'h2':
-                return <h2 key={i} className="font-heading" style={{ textAlign: block.align || 'left' }} dangerouslySetInnerHTML={{ __html: block.text }} />;
-              case 'p':
-                return <p key={i} style={{ textAlign: block.align || 'left' }} dangerouslySetInnerHTML={{ __html: block.text }} />;
-              case 'list':
-                return (
-                  <ul key={i} style={{ textAlign: block.align || 'left' }}>
-                    {block.items.map((item, j) => (
-                      <li key={j} dangerouslySetInnerHTML={{ __html: item }} />
-                    ))}
-                  </ul>
-                );
-              case 'quote':
-                return (
-                  <blockquote key={i} style={{ textAlign: block.align || 'left' }}>
-                    <span className="quote-mark">“</span>
-                    <span dangerouslySetInnerHTML={{ __html: block.text }} />
-                  </blockquote>
-                );
-              case 'product':
-                return (
-                  <ProductBlock
-                    key={i}
-                    block={block}
-                    tag={affiliateTag}
-                    onTrackClick={onTrackClick}
-                  />
-                );
-              default:
-                return null;
-            }
-          })}
+            <p className="blog-price-disclaimer">
+              El precio y la disponibilidad de los productos pueden variar en Amazon. Si usas los enlaces de esta guía podríamos recibir una comisión sin costo adicional para ti.
+            </p>
+            {/* Mandatory Affiliate Disclosure (pequeño, siempre al final) */}
+            <div className="blog-affiliate-notice">
+              <ShieldCheck size={13} />
+              <span>
+                <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
+              </span>
+            </div>
+          </footer>
         </div>
-
-        {/* Post Footer */}
-        <footer className="blog-post-footer">
-          <p className="blog-price-disclaimer">
-            El precio y la disponibilidad de los productos pueden variar en Amazon. Si usas los enlaces de esta guía podríamos recibir una comisión sin costo adicional para ti.
-          </p>
-          {/* Mandatory Affiliate Disclosure (pequeño, siempre al final) */}
-          <div className="blog-affiliate-notice">
-            <ShieldCheck size={13} />
-            <span>
-              <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.
-            </span>
-          </div>
-          <button className="btn-amazon" onClick={onBack}>
-            <ArrowLeft size={16} />
-            <span>Volver al blog</span>
-          </button>
-        </footer>
       </div>
 
       <style>{`
         .blog-post {
           flex: 1;
-          padding: 36px 0 64px;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* ---- Barra superior de la lectura ---- */
+        .blog-reader-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 18px 24px 12px;
+        }
+
+        .blog-reader-meta {
+          font-size: 0.82rem;
+          color: var(--text-muted);
+          font-weight: 600;
+        }
+
+        .blog-progress {
+          height: 3px;
+          background: var(--border-color);
+          margin: 0 24px;
+          border-radius: 999px;
+          overflow: hidden;
+        }
+
+        .blog-progress-bar {
+          height: 100%;
+          background: linear-gradient(90deg, #c29b68, #e65100);
+          border-radius: 999px;
+          transition: width 0.15s ease-out;
+        }
+
+        /* ---- Contenedor de lectura con scroll propio ---- */
+        .blog-scroller {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 30px 24px 48px;
+          -webkit-overflow-scrolling: touch;
         }
 
         .blog-post-container {
           max-width: 780px;
+        }
+
+        /* ---- CTA al final de la lectura ---- */
+        .blog-end-cta {
+          text-align: center;
+          padding: 34px 24px;
+          margin-bottom: 22px;
+          border: 1px dashed var(--border-color);
+          border-radius: var(--border-radius-lg);
+          background: linear-gradient(180deg, #fff, #faf6f0);
+        }
+
+        .blog-end-cta-eyebrow {
+          display: inline-block;
+          background: #fff3e0;
+          color: #e65100;
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 5px 12px;
+          border-radius: var(--border-radius-pill);
+          margin-bottom: 10px;
+        }
+
+        .blog-end-cta h3 {
+          font-size: 1.35rem;
+          margin: 0 0 18px;
+        }
+
+        .blog-end-amazon-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          padding: 14px 30px;
+          border-radius: var(--border-radius-pill);
+          background: var(--text-dark);
+          color: var(--bg-main);
+          font-family: var(--font-body);
+          font-size: 1.05rem;
+          font-weight: 700;
+          text-decoration: none;
+          transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .blog-end-amazon-btn:hover {
+          transform: translateY(-2px);
+        }
+
+        .blog-end-amazon-btn.glow {
+          animation: blog-cta-glow 1.6s ease-in-out infinite;
+        }
+
+        @keyframes blog-cta-glow {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.55);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(230, 81, 0, 0.25), 0 8px 24px rgba(230, 81, 0, 0.4);
+            transform: scale(1.035);
+          }
+        }
+
+        .blog-end-top-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 16px;
+          background: none;
+          border: none;
+          padding: 6px 10px;
+          color: var(--text-muted);
+          font-family: var(--font-body);
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: color var(--transition-fast);
+        }
+
+        .blog-end-top-btn:hover {
+          color: var(--text-dark);
         }
 
         .blog-back-btn {
@@ -190,7 +377,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
           gap: 6px;
           background: none;
           border: none;
-          padding: 0 0 20px;
+          padding: 0;
           color: var(--text-muted);
           font-family: var(--font-body);
           font-size: 0.9rem;
@@ -416,6 +603,9 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ slug, posts, affilia
         @media (max-width: 640px) {
           .blog-post-header h1 {
             font-size: 1.55rem;
+          }
+          .blog-scroller {
+            padding: 22px 16px 40px;
           }
           .blog-product-card {
             flex-direction: column;

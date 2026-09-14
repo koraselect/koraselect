@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product, AffiliateConfig } from './types/product';
 import { BlogPost } from './types/blog';
 import { CATEGORIES, INITIAL_PRODUCTS, INITIAL_AFFILIATE_CONFIG } from './data/initialData';
@@ -18,7 +18,7 @@ import { BlogPostPage } from './components/Blog/BlogPostPage';
 // Admin Components
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { Layers, Sparkles, PlusCircle, ArrowRight, Search, X } from 'lucide-react';
+import { Layers, Sparkles, PlusCircle, ArrowLeft, ArrowRight, Search, X } from 'lucide-react';
 
 // Data layer (Supabase)
 import {
@@ -318,6 +318,26 @@ export const App: React.FC = () => {
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .slice(0, 3);
 
+  // --- Carrusel en movimiento de productos (home) ---
+  const [carouselRunning, setCarouselRunning] = useState<boolean>(true);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const carouselProducts = products.length > 0 ? [...products, ...products] : [];
+
+  useEffect(() => {
+    if (!carouselRunning) return;
+    const el = carouselRef.current;
+    if (!el || carouselProducts.length === 0) return;
+    const id = window.setInterval(() => {
+      const half = el.scrollWidth / 2;
+      if (el.scrollLeft >= half - 2) {
+        el.scrollLeft = 0;
+      } else {
+        el.scrollLeft += 0.9;
+      }
+    }, 24);
+    return () => window.clearInterval(id);
+  }, [carouselRunning, carouselProducts.length]);
+
   // RENDER LOADING
   if (isLoading) {
     return (
@@ -409,13 +429,14 @@ export const App: React.FC = () => {
             />
           )
           : (
-            <BlogIndexPage
-              posts={blogPosts}
-              onOpenPost={(slug) => navigateTo(`/blog/${slug}`)}
-            />
+            <>
+              <BlogIndexPage
+                posts={blogPosts}
+                onOpenPost={(slug) => navigateTo(`/blog/${slug}`)}
+              />
+              <Footer onNavigate={navigateTo} />
+            </>
           )}
-
-        <Footer onNavigate={navigateTo} />
 
         {isSettingsModalOpen && (
           <AffiliateSettingsModal
@@ -706,6 +727,51 @@ export const App: React.FC = () => {
 
       {catalogSection(filteredProducts.slice(0, HOME_PRODUCT_LIMIT), true)}
 
+      {/* Carrusel en movimiento con productos */}
+      {carouselProducts.length > 0 && (
+        <section className="home-carousel-section">
+          <div className="container">
+            <div className="home-section-head">
+              <div>
+                <span className="blog-kicker">En movimiento</span>
+                <h2 className="font-heading">Sigue explorando la tienda</h2>
+              </div>
+              <div className="carousel-controls">
+                <button
+                  className="carousel-arrow"
+                  onClick={() => carouselRef.current?.scrollBy({ left: -340, behavior: 'smooth' })}
+                  title="Desplazar a la izquierda"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <button
+                  className="carousel-arrow"
+                  onClick={() => carouselRef.current?.scrollBy({ left: 340, behavior: 'smooth' })}
+                  title="Desplazar a la derecha"
+                >
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="carousel-viewport"
+            ref={carouselRef}
+            onMouseEnter={() => setCarouselRunning(false)}
+            onMouseLeave={() => setCarouselRunning(true)}
+          >
+            <div className="carousel-track">
+              {carouselProducts.map((prod, idx) => (
+                <div className="carousel-cell" key={idx}>
+                  {productNode(prod)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Footer with Amazon Affiliate Legal Disclosure & Admin Link */}
       <Footer onNavigate={navigateTo} />
 
@@ -924,6 +990,52 @@ export const App: React.FC = () => {
         .view-all-btn {
           padding: 13px 28px;
           font-size: 1rem;
+        }
+
+        /* ---- Carrusel en movimiento ---- */
+        .home-carousel-section {
+          padding: 44px 0 64px;
+        }
+
+        .carousel-controls {
+          display: flex;
+          gap: 8px;
+        }
+
+        .carousel-arrow {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 1px solid var(--border-color);
+          background: var(--bg-card);
+          color: var(--text-dark);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .carousel-arrow:hover {
+          border-color: var(--text-dark);
+          background: var(--text-dark);
+          color: var(--bg-main);
+        }
+
+        .carousel-viewport {
+          overflow-x: hidden;
+          padding: 12px 0 6px;
+        }
+
+        .carousel-track {
+          display: flex;
+          width: max-content;
+        }
+
+        .carousel-cell {
+          width: 300px;
+          flex: none;
+          margin-right: 20px;
         }
 
         .catalog-layout {
