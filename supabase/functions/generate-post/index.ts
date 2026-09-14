@@ -100,21 +100,30 @@ ${extra}
 Catálogo disponible (solo estas referencias para bloques product):
 ${catalogText || '(vacío)'}
 
-Responde ÚNICAMENTE con un JSON válido de la forma {"blocks": [ ... ]}. No añadas markdown, comillas externas ni comentarios en tu respuesta.`;
+Responde ÚNICAMENTE con un JSON válido de la forma {"excerpt": "resumen de 1 a 2 oraciones (máximo 160 caracteres) en español neutro que capture la esencia y el producto principal de la entrada, sin comillas del bloque", "blocks": [ ... ]}. Escribe el campo excerpt en una sola línea, sin saltos de línea. No añadas markdown, comillas externas ni comentarios en tu respuesta.`;
 }
 
-function extractBlocks(jsonText: string): unknown[] | null {
+interface ExtractedResult {
+  blocks: unknown[] | null;
+  excerpt: string;
+}
+
+function extractResult(jsonText: string): ExtractedResult {
   let cleaned = jsonText.trim();
   cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
-  if (start === -1 || end === -1 || end <= start) return null;
+  if (start === -1 || end === -1 || end <= start)
+    return { blocks: null, excerpt: '' };
   try {
     const parsed = JSON.parse(cleaned.slice(start, end + 1));
     const blocks = (parsed as { blocks?: unknown[] }).blocks;
-    return Array.isArray(blocks) ? blocks : null;
+    const excerpt = typeof (parsed as { excerpt?: unknown }).excerpt === 'string'
+      ? ((parsed as { excerpt: string }).excerpt).trim().slice(0, 180)
+      : '';
+    return { blocks: Array.isArray(blocks) ? blocks : null, excerpt };
   } catch {
-    return null;
+    return { blocks: null, excerpt: '' };
   }
 }
 
@@ -258,9 +267,9 @@ Deno.serve(async (req) => {
     if (groqKey) {
       try {
         const raw = await callGroq(groqKey, prompt, [...new Set(groqModels)]);
-        const blocks = extractBlocks(raw);
+        const { blocks, excerpt } = extractResult(raw);
         if (blocks) {
-          return new Response(JSON.stringify({ engine: 'groq', blocks }), { headers: jsonHeaders });
+          return new Response(JSON.stringify({ engine: 'groq', blocks, excerpt }), { headers: jsonHeaders });
         }
         console.error('Groq respondió pero no se pudo parsear JSON:', raw.slice(0, 300));
       } catch (err) {
@@ -272,9 +281,9 @@ Deno.serve(async (req) => {
     if (geminiKey) {
       try {
         const raw = await callGemini(geminiKey, prompt, [...new Set(geminiModels)]);
-        const blocks = extractBlocks(raw);
+        const { blocks, excerpt } = extractResult(raw);
         if (blocks) {
-          return new Response(JSON.stringify({ engine: 'gemini', blocks }), { headers: jsonHeaders });
+          return new Response(JSON.stringify({ engine: 'gemini', blocks, excerpt }), { headers: jsonHeaders });
         }
         console.error('Gemini respondió pero no se pudo parsear JSON:', raw.slice(0, 300));
       } catch (err) {

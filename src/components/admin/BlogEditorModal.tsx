@@ -94,6 +94,19 @@ const formatDate = (iso: string) => {
   return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
+const deriveExcerpt = (blocks: BlogBlock[]) => {
+  for (const b of blocks) {
+    const text = b.type === 'product' ? b.excerpt : b.type === 'list' ? b.items.join(' ') : b.text;
+    const clean = stripHtml(text || '').trim();
+    if (clean.length > 0) {
+      const words = clean.split(/\s+/);
+      const short = words.slice(0, 24).join(' ');
+      return short + (words.length > 24 ? '…' : '');
+    }
+  }
+  return '';
+};
+
 const ToolbarButton: React.FC<{
   onClick: () => void;
   title: string;
@@ -343,9 +356,11 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         selectedProducts
       });
       if (res.success && res.blocks) {
-        setBlocks(hasSelected ? normalizeHighlightedBlocks(res.blocks, selectedProducts) : res.blocks);
+        const finalBlocks = hasSelected ? normalizeHighlightedBlocks(res.blocks, selectedProducts) : res.blocks;
+        setBlocks(finalBlocks);
         if (!title.trim()) handleSetTitle(rawTopic || (hasSelected ? `Reseña: ${selectedProducts[0].title}` : ''));
         if (!coverImage.trim() && hasSelected && selectedProducts[0].mainImage) setCoverImage(selectedProducts[0].mainImage);
+        if (!excerpt.trim()) setExcerpt(res.excerpt?.trim() || deriveExcerpt(finalBlocks) || (hasSelected ? `Guía completa sobre ${selectedProducts[0].title}.` : ''));
         const engineLabel = res.engine === 'gemini' ? 'Gemini (Google)' : 'Grok (Groq)';
         setAiMessage({ type: 'ok', text: `Borrador generado con ${engineLabel}. Revisa, edita y ajusta antes de guardar.` });
         setStep(3);
@@ -547,6 +562,46 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
     }
   });
 
+  const previewPostNode = (
+    <div className="preview-post">
+      <header className="blog-post-header">
+        <span className="blog-post-category">{category || 'General'}</span>
+        <h1 className="font-heading">{title || 'Sin título'}</h1>
+        <div className="blog-post-meta">
+          <span><Calendar size={14} /> {date ? formatDate(date) : 'Sin fecha'}</span>
+          <span><Clock size={14} /> {computeReadTime(blocks)} de lectura</span>
+        </div>
+      </header>
+
+      <figure className="blog-post-cover">
+        {coverImage ? <img src={coverImage} alt={title} /> : <div className="preview-cover-empty"><ImageIcon size={30} />Sin imagen de portada</div>}
+      </figure>
+
+      {excerpt && <p className="preview-excerpt">{excerpt}</p>}
+
+      <div className="blog-affiliate-notice">
+        <ShieldAware />
+        <span>
+          <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
+        </span>
+      </div>
+
+      <div className="blog-post-body">
+        {!hasContent(blocks) ? (
+          <p className="preview-empty">Aún no hay contenido. Vuelve al editor para escribirlo o usa el redactor con IA.</p>
+        ) : (
+          renderBlocksPreview()
+        )}
+      </div>
+
+      <footer className="blog-post-footer">
+        <p className="blog-price-disclaimer">
+          El precio y la disponibilidad de los productos pueden variar en Amazon.
+        </p>
+      </footer>
+    </div>
+  );
+
   return (
     <div className="blog-editor-backdrop animate-fade-in" onClick={onClose}>
       <div className="blog-editor-modal" onClick={(e) => e.stopPropagation()}>
@@ -595,44 +650,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                 <Eye size={16} />
                 <strong>Vista previa del artículo publicado</strong>
               </div>
-
-              <div className="preview-post">
-                <header className="blog-post-header">
-                  <span className="blog-post-category">{category || 'General'}</span>
-                  <h1 className="font-heading">{title || 'Sin título'}</h1>
-                  <div className="blog-post-meta">
-                    <span><Calendar size={14} /> {date ? formatDate(date) : 'Sin fecha'}</span>
-                    <span><Clock size={14} /> {computeReadTime(blocks)} de lectura</span>
-                  </div>
-                </header>
-
-                <figure className="blog-post-cover">
-                  {coverImage ? <img src={coverImage} alt={title} /> : <div className="preview-cover-empty"><ImageIcon size={30} />Sin imagen de portada</div>}
-                </figure>
-
-                {excerpt && <p className="preview-excerpt">{excerpt}</p>}
-
-                <div className="blog-affiliate-notice">
-                  <ShieldAware />
-                  <span>
-                    <strong>Aviso de Afiliación:</strong> Este artículo contiene enlaces de afiliados. Como Afiliado de Amazon, KORASELECT obtiene ingresos por las compras adscritas que cumplen los requisitos aplicables.
-                  </span>
-                </div>
-
-                <div className="blog-post-body">
-                  {!hasContent(blocks) ? (
-                    <p className="preview-empty">Aún no hay contenido. Vuelve al editor para escribirlo o usa el redactor con IA.</p>
-                  ) : (
-                    renderBlocksPreview()
-                  )}
-                </div>
-
-                <footer className="blog-post-footer">
-                  <p className="blog-price-disclaimer">
-                    El precio y la disponibilidad de los productos pueden variar en Amazon.
-                  </p>
-                </footer>
-              </div>
+              {previewPostNode}
             </div>
             </>
           ) : (
@@ -918,7 +936,8 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
 
               {/* ============ PASO 3 · CONTENIDO ============ */}
               {step === 3 && (
-              <>
+              <div className="content-split">
+              <div className="content-main">
               {/* Editor de bloques */}
               <div className="blocks-editor">
                 <div className="blocks-title">
@@ -1146,7 +1165,14 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                 <button className="btn-add-mini" onClick={() => addBlock('quote')} title="Cita"><Quote size={14} /> Cita</button>
                 <button className="btn-add-mini" onClick={() => addBlock('product')} title="Tarjeta de producto"><ShoppingBag size={14} /> Producto</button>
               </div>
-              </>
+              </div>
+
+              {/* Vista previa en vivo del artículo */}
+              <div className="content-live-preview">
+                <div className="content-live-title"><Eye size={15} /> Vista previa en vivo</div>
+                {previewPostNode}
+              </div>
+              </div>
               )}
             </>
           )}
@@ -1371,6 +1397,37 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           gap: 20px;
           overflow-y: auto;
           max-height: 62vh;
+        }
+
+        .content-split {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+          gap: 0 20px;
+          align-items: start;
+          width: 100%;
+        }
+        .content-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+        .content-live-preview {
+          position: sticky;
+          top: 0;
+          align-self: start;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-md);
+          background: var(--bg-card-subtle);
+          padding: 12px 14px;
+          max-height: 56vh;
+          overflow-y: auto;
+        }
+        .content-live-title {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-weight: 600;
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          margin-bottom: 10px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid var(--border-color);
         }
 
         .blog-editor-footer {
@@ -1992,6 +2049,8 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           .blog-product-card { flex-direction: column; align-items: flex-start; }
           .blog-product-media { flex: none; width: 100%; height: 180px; }
           .blog-editor-body { padding: 16px; }
+          .content-split { grid-template-columns: 1fr; }
+          .content-live-preview { position: static; max-height: 48vh; }
           .btn-save-blog { padding: 11px 16px; }
         }
       `}</style>

@@ -6,6 +6,7 @@ export interface AIGenerateResult {
   success: boolean;
   engine: 'groq' | 'gemini';
   blocks?: BlogBlock[];
+  excerpt?: string;
   error?: string;
 }
 
@@ -65,7 +66,7 @@ export const generatePostWithAI = async (
     return { success: false, engine: 'groq', error: error.message };
   }
 
-  const result = data as { engine?: string; blocks?: BlogBlock[]; error?: string };
+  const result = data as { engine?: string; blocks?: BlogBlock[]; excerpt?: string; error?: string };
   if (!result.blocks) {
     return {
       success: false,
@@ -77,7 +78,8 @@ export const generatePostWithAI = async (
   return {
     success: true,
     engine: (result.engine as 'groq' | 'gemini') || 'groq',
-    blocks: result.blocks
+    blocks: result.blocks,
+    excerpt: (result.excerpt || '').trim()
   };
 };
 
