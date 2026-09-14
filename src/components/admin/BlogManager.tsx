@@ -12,6 +12,7 @@ interface BlogManagerProps {
   products: Product[];
   onSavePost: (post: BlogPost) => void;
   onDeletePost: (slug: string) => void;
+  onOpenPost?: (slug: string) => void;
 }
 
 const formatDate = (iso: string) => {
@@ -19,7 +20,7 @@ const formatDate = (iso: string) => {
   return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSavePost, onDeletePost }) => {
+export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSavePost, onDeletePost, onOpenPost }) => {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BlogPost | null>(null);
@@ -136,14 +137,13 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
                           <span>Editar</span>
                         </button>
 
-                        <a
+                        <button
                           className="action-btn preview"
-                          href={`#/blog/${post.slug}`}
+                          onClick={() => onOpenPost && onOpenPost(post.slug)}
                           title="Ver entrada pública"
-                          onClick={(e) => e.preventDefault()}
                         >
                           <ExternalLink size={15} />
-                        </a>
+                        </button>
 
                         <button
                           className="action-btn delete"

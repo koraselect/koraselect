@@ -24,6 +24,7 @@ interface AdminDashboardProps {
   onOpenSettings: () => void;
   onLogout: () => void;
   onReturnToStore: () => void;
+  onOpenBlogPost?: (slug: string) => void;
   blogPosts: BlogPost[];
   onSaveBlogPost: (post: BlogPost) => void;
   onDeleteBlogPost: (slug: string) => void;
@@ -40,6 +41,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onOpenSettings,
   onLogout,
   onReturnToStore,
+  onOpenBlogPost,
   blogPosts,
   onSaveBlogPost,
   onDeleteBlogPost
@@ -386,6 +388,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               onSaveBlogPost(post);
             }}
             onDeletePost={onDeleteBlogPost}
+            onOpenPost={onOpenBlogPost}
           />
         )}
       </main>

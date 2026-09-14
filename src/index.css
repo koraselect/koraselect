@@ -278,6 +278,41 @@ button {
   flex-direction: column;
 }
 
+/* Modal overlay global: cualquier modal (admin, blog, tienda) se ve centrado */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: transform var(--transition-fast);
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  transform: scale(1.1);
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0 16px;
