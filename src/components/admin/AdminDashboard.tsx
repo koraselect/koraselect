@@ -4,6 +4,7 @@ import { BlogPost } from '../../types/blog';
 import { AdminProductEditorModal } from './AdminProductEditorModal';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { BlogManager } from './BlogManager';
+import { BUILD_SHA } from '../../lib/build';
 import { 
   ShoppingBag, Plus, Search, Edit3, Trash2, ExternalLink, 
   Tag, LogOut, ArrowUpRight,
@@ -150,6 +151,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div className="admin-nav-actions">
+            <span className="admin-build-tag" title="Versión del código desplegada">build {BUILD_SHA.slice(0, 7)}</span>
+
             <button className="btn-view-store" onClick={onReturnToStore}>
               <span>Ver Tienda Pública</span>
               <ArrowUpRight size={16} />
@@ -477,6 +480,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           display: flex;
           align-items: center;
           gap: 12px;
+        }
+
+        .admin-build-tag {
+          font-size: 0.7rem;
+          color: var(--text-light);
+          background: rgba(0, 0, 0, 0.06);
+          padding: 3px 10px;
+          border-radius: var(--border-radius-pill);
+          opacity: 0.9;
+          white-space: nowrap;
         }
 
         .btn-view-store {
