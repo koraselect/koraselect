@@ -3,6 +3,7 @@ import { BlogPost, BlogBlock, TextAlign } from '../../types/blog';
 import { Product } from '../../types/product';
 import { generatePostWithAI } from '../../lib/ai';
 import { scrapeUrl, ScrapeResult } from '../../lib/scrape';
+import { lookupAmazonProduct } from '../../lib/amazon';
 import {
   X, Save, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronUp, ChevronDown, Trash2, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle,
@@ -122,7 +123,12 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
 
   // ---- Contexto: productos seleccionados del catálogo ----
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const [pickerProduct, setPickerProduct] = useState('');
+  const [scrapeSource, setScrapeSource] = useState<'url' | 'amazon' | null>(null);
+  const [amazonUrlInput, setAmazonUrlInput] = useState('');
+  const [amazonLoading, setAmazonLoading] = useState(false);
+  const [amazonError, setAmazonError] = useState('');
+  const [prodPickSearch, setProdPickSearch] = useState('');
+  const [prodPickCategory, setProdPickCategory] = useState('');
 
   // ---- Búsqueda de producto en bloques ----
   const [productSearch, setProductSearch] = useState<Record<number, string>>({});
@@ -324,6 +330,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
     try {
       const res = await scrapeUrl(url);
       setScraped(res);
+      setScrapeSource('url');
       setTopic((prev) => prev || res.title || '');
       if (!title.trim()) handleSetTitle(res.title || url);
       if (res.image && !coverImage.trim()) setCoverImage(res.image);
@@ -338,15 +345,52 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   const handleRemoveScraped = () => {
     setScraped(null);
     setScrapeError('');
+    setScrapeSource(null);
+    setAmazonError('');
   };
 
-  const handleAddSelectedProduct = () => {
-    if (!pickerProduct) return;
-    const p = products.find((prod) => (prod.asin || prod.amazonUrl) === pickerProduct);
-    if (p && !selectedProducts.some((s) => s.id === p.id)) {
-      setSelectedProducts((prev) => [...prev, p]);
+  const handleGrabAmazonProduct = async () => {
+    setAmazonError('');
+    const url = amazonUrlInput.trim();
+    if (!url) {
+      setAmazonError('Pega primero el enlace del producto de Amazon.');
+      return;
     }
-    setPickerProduct('');
+    setAmazonLoading(true);
+    try {
+      const data = await lookupAmazonProduct(url);
+      setScraped({
+        url: data.url || url,
+        title: data.title || 'Producto de Amazon',
+        description: '',
+        content: [
+          `Título: ${data.title}`,
+          data.price !== null && data.price > 0 ? `Precio: $${data.price}` : '',
+          data.rating !== null && data.rating > 0 ? `Rating: ${data.rating} de 5 estrellas` : '',
+          data.reviewsCount !== null && data.reviewsCount > 0 ? `Cantidad de opiniones: ${data.reviewsCount}` : '',
+          `ASIN: ${data.asin}`,
+          data.image ? `Imagen principal: ${data.image}` : '',
+          `Link del producto: ${data.url || url}`
+        ].filter(Boolean).join('. ') || 'Producto de Amazon',
+        image: data.image || ''
+      });
+      setScrapeSource('amazon');
+      setAmazonUrlInput('');
+    } catch (e) {
+      setAmazonError(e instanceof Error ? e.message : 'No se pudo extraer el producto de Amazon.');
+    } finally {
+      setAmazonLoading(false);
+    }
+  };
+
+  const togglePickedProduct = (p: Product) => {
+    setSelectedProducts((prev) =>
+      prev.some((s) => s.id === p.id)
+        ? prev.filter((s) => s.id !== p.id)
+        : prev.length >= 6
+          ? prev
+          : [...prev, p]
+    );
   };
 
   const handleRemoveSelectedProduct = (id: string) => {
@@ -377,11 +421,21 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
     onClose();
   };
 
-  const pickerOptions = products.map((p) => (
-    <option key={p.id} value={p.asin || p.amazonUrl}>
-      {p.title} — ${p.price.toFixed(2)}
-    </option>
-  ));
+  const productCategories = Array.from(new Set(products.map((p) => p.category).filter(Boolean))).sort();
+
+  const pickedProductFilter = () => {
+    const q = prodPickSearch.trim().toLowerCase();
+    return products.filter((p) => {
+      const matchCat = !prodPickCategory || p.category === prodPickCategory;
+      const matchQ =
+        !q ||
+        p.title.toLowerCase().includes(q) ||
+        (p.subtitle || '').toLowerCase().includes(q) ||
+        (p.asin || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+  };
 
   const resolveSelectedProduct = (amazonUrl?: string) =>
     amazonUrl ? products.find((p) => p.amazonUrl === amazonUrl) : undefined;
@@ -567,17 +621,44 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                             <span>{scraping ? 'Extrayendo…' : 'Extraer'}</span>
                           </button>
                         </div>
+                        <div className="ai-source-divider">o</div>
+                        <div className="ai-scrape-row">
+                          <input
+                            type="url"
+                            placeholder="Pega el enlace de un producto de Amazon…"
+                            value={amazonUrlInput}
+                            onChange={(e) => setAmazonUrlInput(e.target.value)}
+                            className="ai-scrape-input"
+                          />
+                          <button
+                            type="button"
+                            className="btn-ai-grab"
+                            onClick={handleGrabAmazonProduct}
+                            disabled={amazonLoading}
+                            title="Traer la información del producto de Amazon como contexto"
+                          >
+                            {amazonLoading ? <Loader2 size={15} className="spin" /> : <ShoppingBag size={15} />}
+                            <span>{amazonLoading ? 'Trayendo…' : 'Traer producto'}</span>
+                          </button>
+                        </div>
                         {scrapeError && (
                           <div className="ai-message err" style={{ marginTop: 8 }}>
                             <AlertCircle size={14} />
                             <span>{scrapeError}</span>
                           </div>
                         )}
+                        {amazonError && (
+                          <div className="ai-message err" style={{ marginTop: 8 }}>
+                            <AlertCircle size={14} />
+                            <span>{amazonError}</span>
+                          </div>
+                        )}
                         {scraped && (
                           <div className="ai-scraped-chip">
+                            {scraped.image && <img className="ai-amazon-thumb" src={scraped.image} alt="" />}
                             <div className="ai-scraped-info">
                               <CheckCircle2 size={15} className="ai-scraped-check" />
-                              <span className="ai-scraped-label">Contenido extraído:</span>
+                              <span className="ai-scraped-label">{scrapeSource === 'amazon' ? 'Producto de Amazon:' : 'Contenido extraído:'}</span>
                               <span className="ai-scraped-title">
                                 {scraped.title || scraped.url}
                                 {scraped.content ? ` — ${scraped.content.length.toLocaleString()} caracteres` : ''}
@@ -587,7 +668,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                               type="button"
                               className="ai-chip-remove"
                               onClick={handleRemoveScraped}
-                              title="Quitar el contenido extraído"
+                              title="Quitar el contexto"
                             >
                               <X size={14} />
                             </button>
@@ -599,26 +680,53 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                       <div className="ai-context-section">
                         <div className="ai-context-title">
                           <ShoppingBag size={14} />
-                          <strong>Productos destacados <span className="ai-optional">(opcional)</span></strong>
+                          <strong>Productos destacados <span className="ai-optional">publicados en la tienda</span></strong>
                         </div>
-                        <div className="ai-scrape-row">
-                          <div className="ai-product-picker">
-                            <select value={pickerProduct} onChange={(e) => setPickerProduct(e.target.value)}>
-                              <option value="">— Elegir producto del catálogo —</option>
-                              {pickerOptions}
-                            </select>
+                        <div className="ai-product-picker">
+                          <div className="input-with-icon">
+                            <Search size={15} className="input-icon" />
+                            <input
+                              type="text"
+                              placeholder="Buscar producto publicado (título, ASIN)…"
+                              value={prodPickSearch}
+                              onChange={(e) => setProdPickSearch(e.target.value)}
+                              className="ai-product-search"
+                            />
                           </div>
-                          <button
-                            type="button"
-                            className="btn-ai-grab"
-                            onClick={handleAddSelectedProduct}
-                            disabled={!pickerProduct || selectedProducts.length >= 6}
-                            title="Añadir producto seleccionado como contexto"
+                          <select
+                            className="ai-product-cat"
+                            value={prodPickCategory}
+                            onChange={(e) => setProdPickCategory(e.target.value)}
                           >
-                            <Plus size={15} />
-                            <span>Añadir</span>
-                          </button>
+                            <option value="">Todas las categorías</option>
+                            {productCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
                         </div>
+                        {pickedProductFilter().length > 0 ? (
+                          <ul className="ai-product-pick-list">
+                            {pickedProductFilter().map((p) => {
+                              const isPicked = selectedProducts.some((s) => s.id === p.id);
+                              const full = selectedProducts.length >= 6 && !isPicked;
+                              return (
+                                <li
+                                  key={p.id}
+                                  className={`ai-product-pick-item ${isPicked ? 'selected' : ''}`}
+                                  onClick={() => !full && togglePickedProduct(p)}
+                                  title={full ? 'Máximo 6 productos' : p.title}
+                                >
+                                  {p.mainImage && <img src={p.mainImage} alt="" />}
+                                  <div className="ai-product-pick-info">
+                                    <strong>{p.title}</strong>
+                                    <span>{p.price ? `$${p.price.toFixed(2)}` : ''}{p.rating ? ` · ★ ${p.rating}` : ''}</span>
+                                  </div>
+                                  {isPicked ? <CheckCircle2 size={16} className="ai-pick-check" /> : <Plus size={15} />}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="ai-context-empty">No hay productos que coincidan con la búsqueda.</p>
+                        )}
                         {selectedProducts.length > 0 ? (
                           <div className="ai-selected-products">
                             {selectedProducts.map((p) => (
@@ -1255,18 +1363,61 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           font-size: 0.84rem;
         }
 
-        .ai-product-picker { flex: 1; min-width: 0; }
-        .ai-product-picker select {
+        .ai-product-picker { display: flex; flex-direction: column; gap: 8px; }
+        .ai-product-search { width: 100%; }
+        .ai-product-cat {
           width: 100%;
-          height: 100%;
-          padding: 9px 12px;
+          padding: 8px 10px;
           border: 1px solid #d8d4f0;
           border-radius: var(--border-radius-md);
           background: #fff;
           font-family: var(--font-body);
-          font-size: 0.84rem;
+          font-size: 0.82rem;
           color: var(--text-dark);
         }
+        .ai-product-pick-list {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin-top: 8px;
+          max-height: 170px;
+          overflow-y: auto;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-md);
+          padding: 6px;
+          background: #fff;
+        }
+        .ai-product-pick-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 8px;
+          border-radius: var(--border-radius-sm);
+          cursor: pointer;
+          transition: background var(--transition-fast);
+        }
+        .ai-product-pick-item:hover { background: var(--bg-main); }
+        .ai-product-pick-item.selected { background: #f3f0ff; }
+        .ai-product-pick-item img { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+        .ai-product-pick-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .ai-product-pick-info strong { font-size: 0.8rem; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ai-product-pick-info span { font-size: 0.72rem; color: var(--text-muted); }
+        .ai-pick-check { color: #16a34a; flex-shrink: 0; }
+
+        .ai-amazon-thumb { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color); }
+        .ai-source-divider {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 8px 0;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-muted);
+        }
+        .ai-source-divider::before,
+        .ai-source-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
 
         .btn-ai-grab {
           background: #ffffff;
