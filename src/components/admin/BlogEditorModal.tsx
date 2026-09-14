@@ -9,7 +9,7 @@ import {
   X, Save, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronUp, ChevronDown, Trash2, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle,
   Type, List, Quote, Heading2, ShoppingBag, Image as ImageIcon, Link2, Search,
-  GripVertical, RefreshCw, Eye, Calendar, Clock, Star
+  GripVertical, RefreshCw, Eye, Calendar, Clock, Star, ArrowLeft, ArrowRight, Check
 } from 'lucide-react';
 import { AMAZON_CTA_TEXT } from '../../utils/affiliate';
 
@@ -115,6 +115,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   const [topic, setTopic] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // ---- Contexto: URL de referencia ----
   const [scrapedUrlInput, setScrapedUrlInput] = useState('');
@@ -300,6 +301,7 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         if (!title.trim()) handleSetTitle(topic.trim());
         const engineLabel = res.engine === 'gemini' ? 'Gemini (Google)' : 'Grok (Groq)';
         setAiMessage({ type: 'ok', text: `Borrador generado con ${engineLabel}. Revisa, edita y ajusta antes de guardar.` });
+        setStep(3);
       } else {
         setAiMessage({ type: 'err', text: res.error || 'La IA no pudo generar el borrador.' });
       }
@@ -564,7 +566,28 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
             </>
           ) : (
             <>
-              {/* ============ REDACTOR CON IA ============ */}
+              {/* ============ PASOS DEL ASISTENTE ============ */}
+              <div className="blog-stepper">
+                {[
+                  { n: 1, label: 'Redactar con IA' },
+                  { n: 2, label: 'Detalles de la entrada' },
+                  { n: 3, label: 'Contenido' }
+                ].map((s) => (
+                  <button
+                    key={s.n}
+                    type="button"
+                    className={`blog-step ${step === s.n ? 'active' : ''} ${step > s.n ? 'done' : ''}`}
+                    onClick={() => setStep(s.n as 1 | 2 | 3)}
+                  >
+                    <span className="step-dot">{step > s.n ? <Check size={12} /> : s.n}</span>
+                    <span className="step-label">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* ============ PASO 1 · REDACTOR CON IA ============ */}
+              {step === 1 && (
+              <>
               {/* Panel IA */}
               <div className="ai-panel">
                 <div className="ai-panel-toggle">
@@ -763,7 +786,12 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                   </div>
                 </div>
               </div>
+              </>
+              )}
 
+              {/* ============ PASO 2 · DETALLES DE LA ENTRADA ============ */}
+              {step === 2 && (
+              <>
               <div className="blog-meta-grid">
                 <div className="form-group col-span-2">
                   <label>Título de la Entrada *</label>
@@ -832,8 +860,13 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                   <img src={coverImage} alt="Portada" />
                 </div>
               )}
+              </>
+              )}
 
 
+              {/* ============ PASO 3 · CONTENIDO ============ */}
+              {step === 3 && (
+              <>
               {/* Editor de bloques */}
               <div className="blocks-editor">
                 <div className="blocks-title">
@@ -1061,6 +1094,8 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                 <button className="btn-add-mini" onClick={() => addBlock('quote')} title="Cita"><Quote size={14} /> Cita</button>
                 <button className="btn-add-mini" onClick={() => addBlock('product')} title="Tarjeta de producto"><ShoppingBag size={14} /> Producto</button>
               </div>
+              </>
+              )}
             </>
           )}
         </div>
@@ -1071,18 +1106,33 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
             <button className="btn-text" onClick={onClose}>Cancelar</button>
           </div>
           <div className="footer-right">
-            <button className="btn-secondary" onClick={() => setPreviewMode(false)} disabled={!previewMode}>
-              <Type size={15} />
-              <span>Editar contenido</span>
-            </button>
-            <button className="btn-secondary" onClick={() => setPreviewMode(true)} disabled={previewMode}>
-              <Eye size={15} />
-              <span>Vista previa</span>
-            </button>
-            <button className="btn-amazon btn-save-blog" onClick={handleSave}>
-              <Save size={16} />
-              <span>{isEditing ? 'Guardar Cambios' : 'Publicar Entrada'}</span>
-            </button>
+            {step > 1 && !previewMode && (
+              <button className="btn-secondary" onClick={() => setStep((step - 1) as 1 | 2 | 3)}>
+                <ArrowLeft size={15} />
+                <span>Anterior</span>
+              </button>
+            )}
+            {step < 3 ? (
+              <button className="btn-secondary" onClick={() => setStep((step + 1) as 1 | 2 | 3)}>
+                <span>Siguiente</span>
+                <ArrowRight size={15} />
+              </button>
+            ) : (
+              <>
+                <button className="btn-secondary" onClick={() => setPreviewMode(false)} disabled={!previewMode}>
+                  <Type size={15} />
+                  <span>Editar contenido</span>
+                </button>
+                <button className="btn-secondary" onClick={() => setPreviewMode(true)} disabled={previewMode}>
+                  <Eye size={15} />
+                  <span>Vista previa</span>
+                </button>
+                <button className="btn-amazon btn-save-blog" onClick={handleSave}>
+                  <Save size={16} />
+                  <span>{isEditing ? 'Guardar Cambios' : 'Publicar Entrada'}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -1136,6 +1186,66 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
           margin-right: 10px;
           align-self: center;
           white-space: nowrap;
+        }
+
+        .blog-stepper {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          overflow-x: auto;
+          padding-bottom: 2px;
+        }
+
+        .blog-step {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 7px 14px 7px 8px;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-pill);
+          background: var(--bg-card);
+          color: var(--text-muted);
+          font-family: var(--font-body);
+          font-size: 0.82rem;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all var(--transition-fast);
+        }
+
+        .blog-step:hover { border-color: #c4b5fd; }
+
+        .blog-step .step-dot {
+          width: 22px;
+          height: 22px;
+          flex-shrink: 0;
+          display: grid;
+          place-items: center;
+          border-radius: 50%;
+          border: 2px solid var(--border-color);
+          font-weight: 700;
+          font-size: 0.75rem;
+          background: #fff;
+          color: var(--text-light);
+        }
+
+        .blog-step.active {
+          background: linear-gradient(135deg, #7c3aed, #9333ea);
+          border-color: transparent;
+          color: #fff;
+        }
+
+        .blog-step.active .step-dot {
+          border-color: #fff;
+          background: rgba(255,255,255,0.15);
+          color: #fff;
+        }
+
+        .blog-step.done { color: #6d28d9; }
+        .blog-step.done .step-dot {
+          border-color: #6d28d9;
+          background: #6d28d9;
+          color: #fff;
         }
 
         .blog-editor-body {
