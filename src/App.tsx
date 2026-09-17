@@ -912,12 +912,14 @@ export const App: React.FC = () => {
           position: relative;
           aspect-ratio: 16 / 9;
           overflow: hidden;
+          background-color: var(--bg-card-subtle);
         }
 
         .home-blog-media img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          padding: 8px;
           transition: transform 0.4s ease;
         }
 
