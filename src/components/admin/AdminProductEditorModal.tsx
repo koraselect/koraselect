@@ -185,8 +185,8 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   const [highlightInput, setHighlightInput] = useState('');
 
   // A+ Content State
-  const [aPlusTitle, setAPlusTitle] = useState(productToEdit?.aPlusContent?.heroTitle || 'Luxury Design. Made For Real Travel.');
-  const [aPlusSubtitle, setAPlusSubtitle] = useState(productToEdit?.aPlusContent?.heroSubtitle || 'Descripción del producto en Amazon');
+  const [aPlusTitle, setAPlusTitle] = useState(productToEdit?.aPlusContent?.heroTitle || '');
+  const [aPlusSubtitle, setAPlusSubtitle] = useState(productToEdit?.aPlusContent?.heroSubtitle || '');
 
   // IA para el copy A+ (título / subtítulo)
   const [copyLoading, setCopyLoading] = useState(false);
@@ -254,6 +254,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
     try {
       const data = await lookupAmazonProduct(url);
       if (data.title && !title) setTitle(data.title);
+      if (data.subtitle && !subtitle) setSubtitle(data.subtitle);
       if (data.price !== null && data.price > 0) setPrice(data.price.toString());
       if (data.rating !== null && data.rating > 0) setRating(data.rating.toString());
       if (data.reviewsCount !== null && data.reviewsCount > 0) setReviewsCount(data.reviewsCount.toString());
@@ -1369,6 +1370,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
           display: flex;
           gap: 10px;
           flex-wrap: wrap;
+          justify-content: center;
         }
 
         .lightbox-action {
@@ -1418,8 +1420,8 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
           display: flex;
           gap: 8px;
           align-items: center;
-          flex: 1;
-          min-width: 220px;
+          flex: 1 1 100%;
+          min-width: 260px;
         }
 
         .lightbox-replace input {

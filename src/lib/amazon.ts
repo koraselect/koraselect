@@ -5,6 +5,7 @@ export interface AmazonLookupResult {
   asin: string;
   url: string;
   title: string;
+  subtitle?: string;
   price: number | null;
   image: string;
   images: string[];

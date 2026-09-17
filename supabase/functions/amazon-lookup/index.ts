@@ -175,6 +175,27 @@ function extractGalleryImages(page: string): string[] {
   return [...byBase.values()].sort((a, b) => galleryImageSize(b) - galleryImageSize(a));
 }
 
+// Extrae un subtítulo corto del producto a partir del meta description
+// de Amazon (por ejemplo: "for Wide Mouth and Regular Mouth Mason Jar").
+function extractSubtitle(page: string, productTitle: string): string {
+  const rawDesc =
+    page.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"/i)?.[1] || '';
+  let s = stripTags(rawDesc);
+  s = decodeHtmlEntities(s);
+  const cleanTitle = stripTags(productTitle);
+  if (cleanTitle && s.startsWith(`Amazon.com: ${cleanTitle}`)) {
+    const rest = s.slice(`Amazon.com: ${cleanTitle}`.length).trim();
+    s = rest.startsWith('|') ? rest.slice(1).trim() : rest;
+  } else if (s.startsWith('Amazon.com:')) {
+    s = s.slice('Amazon.com:'.length).trim();
+    const barIdx = s.indexOf('|');
+    if (barIdx !== -1) s = s.slice(barIdx + 1).trim();
+  }
+  s = s.replace(/\s*:\s*[^:]*$/, '').trim();
+  if (!s) return '';
+  return s.length > 170 ? `${s.slice(0, 167)}…` : s;
+}
+
 function extractImage(page: string, ld: Record<string, unknown> | null): string {
   let img = '';
   if (ld?.image) img = Array.isArray(ld.image) ? String(ld.image[0]) : String(ld.image);
@@ -330,6 +351,7 @@ Deno.serve(async (req) => {
         asin,
         url: fetchedUrl || rawUrl,
         title,
+        subtitle: extractSubtitle(page, title),
         price,
         image,
         images: extractGalleryImages(page),

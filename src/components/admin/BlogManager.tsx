@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { BlogPost } from '../../types/blog';
 import { Product } from '../../types/product';
 import { BlogEditorModal } from './BlogEditorModal';
+import { BlogPostPage } from '../Blog/BlogPostPage';
+import { useLockBodyScroll } from '../../lib/useLockBodyScroll';
 import {
   Plus, FileText, Edit3, Trash2, ExternalLink, Calendar, Clock, AlertCircle,
-  Newspaper, Check
+  Newspaper, Check, X
 } from 'lucide-react';
 
 interface BlogManagerProps {
@@ -12,7 +14,8 @@ interface BlogManagerProps {
   products: Product[];
   onSavePost: (post: BlogPost) => void;
   onDeletePost: (slug: string) => void;
-  onOpenPost?: (slug: string) => void;
+  affiliateTag: string;
+  onTrackClick: (product: Product) => void;
 }
 
 const formatDate = (iso: string) => {
@@ -20,11 +23,14 @@ const formatDate = (iso: string) => {
   return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSavePost, onDeletePost, onOpenPost }) => {
+export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSavePost, onDeletePost, affiliateTag, onTrackClick }) => {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BlogPost | null>(null);
+  const [previewSlug, setPreviewSlug] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+
+  useLockBodyScroll(!!previewSlug);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -139,7 +145,7 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
 
                         <button
                           className="action-btn preview"
-                          onClick={() => onOpenPost && onOpenPost(post.slug)}
+                          onClick={() => setPreviewSlug(post.slug)}
                           title="Ver entrada pública"
                         >
                           <ExternalLink size={15} />
@@ -209,6 +215,26 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
                 <Trash2 size={16} />
                 <span>Sí, Eliminar</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vista previa / Ver entrada pública en modal */}
+      {previewSlug && (
+        <div className="modal-backdrop" onClick={() => setPreviewSlug(null)}>
+          <div className="modal-container blog-preview-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setPreviewSlug(null)} title="Cerrar vista previa">
+              <X size={18} />
+            </button>
+            <div className="blog-preview-body">
+              <BlogPostPage
+                slug={previewSlug}
+                posts={posts}
+                affiliateTag={affiliateTag}
+                onBack={() => setPreviewSlug(null)}
+                onTrackClick={onTrackClick}
+              />
             </div>
           </div>
         </div>
@@ -290,6 +316,38 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
           text-align: center;
           position: relative;
           box-shadow: var(--shadow-lg);
+        }
+
+        .blog-preview-modal {
+          background-color: var(--bg-main);
+          width: 100%;
+          max-width: 920px;
+          height: 90vh;
+          max-height: 90vh;
+          border-radius: var(--border-radius-lg);
+          box-shadow: var(--shadow-lg);
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow: hidden;
+          border: 1px solid var(--border-color);
+        }
+
+        .blog-preview-body {
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .blog-preview-body .blog-post {
+          flex: 1;
+          height: 100%;
+        }
+
+        .blog-preview-body .blog-post-header h1 {
+          font-size: 1.7rem;
         }
       `}</style>
     </div>

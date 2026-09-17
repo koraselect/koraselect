@@ -395,7 +395,7 @@ export const App: React.FC = () => {
         onDeleteBlogPost={handleDeleteBlogPost}
         onLogout={handleAdminLogout}
         onReturnToStore={() => navigateTo('/')}
-        onOpenBlogPost={(slug) => navigateTo(`/blog/${slug}`)}
+        onTrackClick={handleTrackClick}
       />
     );
   }
