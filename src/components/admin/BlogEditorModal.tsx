@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, Fragment } from 'react';
 import { BlogPost, BlogBlock, TextAlign } from '../../types/blog';
 import { Product } from '../../types/product';
-import { generatePostWithAI } from '../../lib/ai';
+import { generatePostWithAI, generateMetaWithAI } from '../../lib/ai';
 import { scrapeUrl, ScrapeResult } from '../../lib/scrape';
 import { lookupAmazonProduct } from '../../lib/amazon';
 import { BUILD_SHA } from '../../lib/build';
@@ -167,6 +167,10 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  // ---- IA para título / extracto (paso Detalles) ----
+  const [metaLoading, setMetaLoading] = useState<'title' | 'excerpt' | null>(null);
+  const [metaMessage, setMetaMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -415,6 +419,57 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
       return;
     }
     handleGenerateAI();
+  };
+
+  const blocksToPlainText = () =>
+    blocks
+      .map((b) => {
+        if (b.type === 'product') return b.title || '';
+        if (b.type === 'list') return b.items.join(' · ');
+        return stripHtml(b.text || '');
+      })
+      .filter(Boolean)
+      .join('. ')
+      .slice(0, 2500);
+
+  const handleAiMeta = async (field: 'title' | 'excerpt') => {
+    setMetaLoading(field);
+    setMetaMessage(null);
+    try {
+      const res = await generateMetaWithAI({
+        field,
+        title,
+        excerpt,
+        topic,
+        blogCategory: category,
+        content: blocksToPlainText(),
+        scrapedUrl: scraped?.url,
+        scrapedContent: scraped?.content,
+        products: products.map((p) => ({ title: p.title, asin: p.asin, amazonUrl: p.amazonUrl })),
+        selectedProducts: selectedProducts.map((p) => ({
+          title: p.title,
+          rating: p.rating,
+          subtitle: p.subtitle,
+          description: p.description
+        }))
+      });
+      if (res.success && res.text) {
+        if (field === 'title') {
+          handleSetTitle(res.text);
+        } else {
+          setExcerpt(res.text);
+        }
+        const engineLabel = res.engine === 'gemini' ? 'Gemini (Google)' : 'Grok (Groq)';
+        setMetaMessage({ type: 'ok', text: `${field === 'title' ? 'Título' : 'Extracto'} redactado con ${engineLabel}. Revisa y edita si lo deseas.` });
+      } else {
+        setMetaMessage({ type: 'err', text: res.error || 'La IA no pudo redactar el texto.' });
+      }
+    } catch (e) {
+      console.error(e);
+      setMetaMessage({ type: 'err', text: 'Error inesperado conectando con la IA.' });
+    } finally {
+      setMetaLoading(null);
+    }
   };
 
   const handleScrapeUrl = async () => {
@@ -899,7 +954,19 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
               <>
               <div className="blog-meta-grid">
                 <div className="form-group col-span-2">
-                  <label>Título de la Entrada *</label>
+                  <div className="form-label-row">
+                    <label>Título de la Entrada *</label>
+                    <button
+                      type="button"
+                      className="ai-field-btn"
+                      onClick={() => handleAiMeta('title')}
+                      disabled={metaLoading !== null}
+                      title="Redactar o mejorar el título con IA"
+                    >
+                      {metaLoading === 'title' ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
+                      <span>{metaLoading === 'title' ? 'Redactando…' : 'Redactar título con IA'}</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     placeholder="Ej: Las mejores maletas de cabina para viajar ligero"
@@ -961,9 +1028,27 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
                   <span className="field-hint">Si no la indicas, el post se verá sin imagen destacada.</span>
                 </div>
                 <div className="form-group col-span-2">
-                  <label>Extracto (resumen que se muestra en la portada del blog)</label>
+                  <div className="form-label-row">
+                    <label>Extracto (resumen que se muestra en la portada del blog)</label>
+                    <button
+                      type="button"
+                      className="ai-field-btn"
+                      onClick={() => handleAiMeta('excerpt')}
+                      disabled={metaLoading !== null}
+                      title="Redactar o mejorar el extracto con IA"
+                    >
+                      {metaLoading === 'excerpt' ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
+                      <span>{metaLoading === 'excerpt' ? 'Redactando…' : 'Redactar extracto con IA'}</span>
+                    </button>
+                  </div>
                   <textarea rows={2} placeholder="Resumen breve de la entrada…" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
                 </div>
+                {metaMessage && (
+                  <div className={`ai-message ${metaMessage.type === 'ok' ? 'ok' : 'err'} ai-field-meta-msg`}>
+                    {metaMessage.type === 'ok' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                    <span>{metaMessage.text}</span>
+                  </div>
+                )}
               </div>
 
               {coverImage && (
@@ -1839,6 +1924,32 @@ export const BlogEditorModal: React.FC<BlogEditorModalProps> = ({
         /* ---- Metadatos ---- */
         .blog-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .col-span-2 { grid-column: span 2; }
+
+        .form-label-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
+        .form-label-row label { margin-bottom: 0; }
+
+        .ai-field-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #6d28d9;
+          color: #fff;
+          font-size: 0.74rem;
+          font-weight: 700;
+          padding: 5px 12px;
+          border-radius: var(--border-radius-pill);
+          transition: all var(--transition-fast);
+          flex-shrink: 0;
+        }
+        .ai-field-btn:hover { background: #5b21b6; }
+        .ai-field-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .ai-field-meta-msg { margin-top: 0; }
 
         .category-select {
           width: 100%;

@@ -83,6 +83,76 @@ export const generatePostWithAI = async (
   };
 };
 
+export interface AIGenerateMetaResult {
+  success: boolean;
+  engine?: 'groq' | 'gemini';
+  field?: 'title' | 'excerpt';
+  text?: string;
+  error?: string;
+}
+
+export interface GenerateMetaRequest {
+  field: 'title' | 'excerpt';
+  title: string;
+  excerpt: string;
+  topic?: string;
+  blogCategory?: string;
+  content?: string;
+  scrapedUrl?: string;
+  scrapedContent?: string;
+  products?: Pick<Product, 'title' | 'asin' | 'amazonUrl'>[];
+  selectedProducts?: Pick<Product, 'title' | 'rating' | 'subtitle' | 'description'>[];
+}
+
+export const generateMetaWithAI = async (
+  req: GenerateMetaRequest
+): Promise<AIGenerateMetaResult> => {
+  const { data, error } = await supabase.functions.invoke('generate-meta', {
+    body: {
+      field: req.field,
+      title: req.title,
+      excerpt: req.excerpt,
+      topic: req.topic || '',
+      blogCategory: req.blogCategory || '',
+      content: req.content || '',
+      scrapedUrl: req.scrapedUrl || '',
+      scrapedContent: req.scrapedContent || '',
+      products: (req.products || []).map((p) => ({
+        title: p.title,
+        asin: p.asin || '',
+        amazonUrl: p.amazonUrl
+      })),
+      selectedProducts: (req.selectedProducts || []).map((p) => ({
+        title: p.title,
+        rating: p.rating,
+        subtitle: p.subtitle || '',
+        description: p.description || ''
+      }))
+    }
+  });
+
+  if (error) {
+    return { success: false, engine: 'groq', error: error.message };
+  }
+
+  const result = data as { engine?: string; field?: string; title?: string; excerpt?: string; error?: string };
+  const text = req.field === 'title' ? result.title : result.excerpt;
+  if (!text) {
+    return {
+      success: false,
+      engine: (result.engine as 'groq' | 'gemini') || 'groq',
+      error: result.error || 'La IA no devolvió el texto solicitado.'
+    };
+  }
+
+  return {
+    success: true,
+    engine: (result.engine as 'groq' | 'gemini') || 'groq',
+    field: req.field,
+    text
+  };
+};
+
 export interface AIImproveResult {
   success: boolean;
   engine?: 'groq' | 'gemini';
