@@ -32,6 +32,7 @@ import {
   deleteBlogPost
 } from './lib/db';
 import { trackProductClick, trackPageView } from './lib/gtag';
+import { trackPostView, trackLinkClick, isAdminSession } from './lib/analytics';
 
 export const App: React.FC = () => {
   // 1. Affiliate Configuration State (desde Supabase)
@@ -130,6 +131,15 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // Visitas de entradas: solo se cuentan en la ruta pública del blog (nunca del admin).
+  const currentPostSlug = route.name === 'blogPost' ? route.slug : '';
+  useEffect(() => {
+    if (route.name === 'blogPost' && currentPostSlug) {
+      trackPostView(currentPostSlug);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.name, currentPostSlug]);
+
   // 6. Admin Auth State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('luxe_admin_auth') === 'true';
@@ -157,8 +167,17 @@ export const App: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
 
   // 8. Affiliate Click -> GA4 select_item (las métricas de ingresos se consultan en Amazon)
+  //    + registro en event_clicks (analytics propios). Las visitas/clics del admin NO cuentan.
   const handleTrackClick = (product: Product) => {
+    if (isAdminSession()) return;
     trackProductClick(product.title, product.category, product.amazonUrl);
+    trackLinkClick({
+      slug: route.name === 'blogPost' ? route.slug : null,
+      productId: product.id,
+      productAsin: product.asin,
+      productTitle: product.title,
+      destinationUrl: product.amazonUrl
+    });
   };
 
   // 9. Product CRUD Handlers (Supabase)

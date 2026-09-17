@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BlogPost } from '../../types/blog';
 import { Product } from '../../types/product';
 import { BlogEditorModal } from './BlogEditorModal';
 import { BlogPostPage } from '../Blog/BlogPostPage';
 import { useLockBodyScroll } from '../../lib/useLockBodyScroll';
+import { fetchPageViews, fetchEventClicks, daysAgoKey, PageViewRow, EventClickRow } from '../../lib/analytics';
 import {
   Plus, FileText, Edit3, Trash2, ExternalLink, Calendar, Clock, AlertCircle,
-  Newspaper, Check, X
+  Newspaper, Check, X, Eye, MousePointerClick
 } from 'lucide-react';
 
 interface BlogManagerProps {
@@ -29,8 +30,22 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
   const [deleteTarget, setDeleteTarget] = useState<BlogPost | null>(null);
   const [previewSlug, setPreviewSlug] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [pageViews, setPageViews] = useState<PageViewRow[]>([]);
+  const [eventClicks, setEventClicks] = useState<EventClickRow[]>([]);
 
   useLockBodyScroll(!!previewSlug);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetchPageViews(), fetchEventClicks()])
+      .then(([views, clicks]) => {
+        if (!active) return;
+        setPageViews(views);
+        setEventClicks(clicks);
+      })
+      .catch((e) => console.error('Error cargando analíticas:', e));
+    return () => { active = false; };
+  }, []);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -48,6 +63,25 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
   };
 
   const sortedPosts = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  const statsFor = (slug: string) => {
+    const page = `/blog/${slug}`;
+    const cutoff = daysAgoKey(29);
+
+    let total = 0;
+    let last30 = 0;
+    for (const row of pageViews) {
+      if (row.page !== page) continue;
+      total += row.views;
+      if (row.view_date >= cutoff) last30 += row.views;
+    }
+
+    let clicks = 0;
+    for (const row of eventClicks) {
+      if (row.slug === slug) clicks += 1;
+    }
+    return { total, last30, clicks };
+  };
 
   return (
     <div className="blog-manager">
@@ -96,6 +130,7 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
                   <th>Categoría</th>
                   <th>Fecha</th>
                   <th>Lectura</th>
+                  <th>Visitas / Clics</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -132,6 +167,25 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
                         {post.readTime}
                       </span>
                     </td>
+                    {(() => {
+                      const s = statsFor(post.slug);
+                      return (
+                        <td>
+                          <div className="blog-stats-cell">
+                            <span className="blog-cell-meta" title="Visitas totales (30 días)" >
+                              <Eye size={12} />
+                              {s.total}
+                              <span className="blog-cell-sub">30d: {s.last30}</span>
+                            </span>
+                            <span className="blog-cell-meta blog-cell-clicks" title="Clics en productos dentro de la entrada (event_clicks)">
+                              <MousePointerClick size={12} />
+                              {s.clicks}
+                              <span className="blog-cell-sub">clics</span>
+                            </span>
+                          </div>
+                        </td>
+                      );
+                    })()}
                     <td>
                       <div className="action-buttons-group">
                         <button
@@ -300,6 +354,22 @@ export const BlogManager: React.FC<BlogManagerProps> = ({ posts, products, onSav
           gap: 5px;
           font-size: 0.84rem;
           color: var(--text-muted);
+        }
+
+        .blog-stats-cell {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 6px;
+        }
+
+        .blog-stats-cell .blog-cell-sub {
+          font-size: 0.72rem;
+          color: var(--text-light);
+        }
+
+        .blog-cell-clicks {
+          color: #1976d2;
         }
 
         .action-btn.preview {

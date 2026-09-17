@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, Category, AffiliateConfig } from '../../types/product';
 import { BlogPost } from '../../types/blog';
 import { AdminProductEditorModal } from './AdminProductEditorModal';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { BlogManager } from './BlogManager';
 import { BUILD_SHA } from '../../lib/build';
+import { fetchPageViews, fetchEventClicks, daysAgoKey, PageViewRow, EventClickRow } from '../../lib/analytics';
 import { 
   Plus, Search, Edit3, Trash2, ExternalLink, 
   Tag, LogOut, ArrowUpRight,
-  Copy, RotateCcw, Check, Layers, AlertCircle, Newspaper
+  Copy, RotateCcw, Check, Layers, AlertCircle, Newspaper,
+  Eye, MousePointerClick
 } from 'lucide-react';
 
 type AdminTab = 'products' | 'blog';
@@ -52,6 +54,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [pageViews, setPageViews] = useState<PageViewRow[]>([]);
+  const [eventClicks, setEventClicks] = useState<EventClickRow[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetchPageViews(), fetchEventClicks()])
+      .then(([views, clicks]) => {
+        if (!active) return;
+        setPageViews(views);
+        setEventClicks(clicks);
+      })
+      .catch((e) => console.error('Error cargando analíticas:', e));
+    return () => { active = false; };
+  }, []);
+
+  const analytics = (() => {
+    const cutoffKey = daysAgoKey(29);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 29);
+    const cutoffTime = cutoff.getTime();
+    let visitsTotal = 0, visits30 = 0, clicksTotal = 0, clicks30 = 0;
+    for (const row of pageViews) {
+      visitsTotal += row.views;
+      if (row.view_date >= cutoffKey) visits30 += row.views;
+    }
+    for (const row of eventClicks) {
+      clicksTotal += 1;
+      if (new Date(row.created_at).getTime() >= cutoffTime) clicks30 += 1;
+    }
+    return { visitsTotal, visits30, clicksTotal, clicks30 };
+  })();
 
   // Custom Confirm Modal State
   const [confirmModalState, setConfirmModalState] = useState<{
@@ -213,6 +246,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="metric-data">
               <div className="metric-num">{blogPosts.length}</div>
               <div className="metric-label">Entradas de Blog Publicadas</div>
+            </div>
+          </div>
+
+          <div className="metric-card clickable" onClick={() => setActiveTab('blog')} title="Visitas a las entradas del blog">
+            <div className="metric-icon-box views">
+              <Eye size={22} />
+            </div>
+            <div className="metric-data">
+              <div className="metric-num">{analytics.visits30}</div>
+              <div className="metric-label">Visitas al Blog (30 días) · {analytics.visitsTotal} total</div>
+            </div>
+          </div>
+
+          <div className="metric-card" title="Clics en productos desde la tienda y el blog">
+            <div className="metric-icon-box clicks">
+              <MousePointerClick size={22} />
+            </div>
+            <div className="metric-data">
+              <div className="metric-num">{analytics.clicks30}</div>
+              <div className="metric-label">Clics en Productos (30 días) · {analytics.clicksTotal} total</div>
             </div>
           </div>
         </div>
@@ -866,6 +919,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         .metric-icon-box.blog {
           background-color: #ede7f6;
           color: #5e35b1;
+        }
+
+        .metric-icon-box.views {
+          background-color: #e0f2f1;
+          color: #00695c;
         }
 
         .icon-circle.delete {
