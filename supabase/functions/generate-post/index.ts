@@ -84,7 +84,15 @@ Crea una entrada de blog de 5 a 10 bloques usando SOLO estos tipos de bloque:
 Puedes usar etiquetas <strong>, <em> y <u> dentro de los textos de p, h2, quote y de los items de list para dar énfasis. NUNCA uses HTML dentro de bloques product.
 
 Reglas:
-- Comienza con un párrafo de introducción atractivo y termina con una conclusión (cita o párrafo).
+- Comienza con un párrafo de introducción con personalidad y termina con una conclusión (cita o párrafo).
+- VARIEDAD DE APERTURA (IMPORTANTE): la primera oración debe cambiar por completo entre una reseña y otra. Está PROHIBIDO comenzar con frases vacías o recicladas como: "En este artículo...", "En el mundo actual...", "A la hora de elegir...", "Cada vez más personas...", "Si buscas...", "X es un producto que...", "Cuando se trata de...", "Elegir bien X es importante...". En su lugar, elige UNO de estos enfoques narrativos y varíalo entre entradas:
+  1. Escena o situación concreta: describe un momento real del lector (p. ej. "Vas llegando al mostrador de la aerolínea y la maleta no entra en la varilla de medidas...").
+  2. Pregunta directa que toque un dolor o deseo real (p. ej. "¿Cuántas veces has tenido que vaciar la mochila entera por una bolsa que gotea?").
+  3. Dato concreto o cifra de la categoría que sorprenda y dé pie al tema.
+  4. Antes y después: contrasta lo que hacías antes con lo que el producto permite hacer ahora.
+  5. Afirmación firme que defienda un criterio claro de la editorial, sin rodeos.
+- NATURALIDAD: escribe como una persona con experiencia que comparte consejos, con ritmo variado: alterna frases cortas y largas. No encadenes oraciones que empiecen con la misma palabra ni repitas muletillas de transición ("Además", "Por otro lado", "También", "Por eso") en párrafos seguidos. Evita adjetivos vacíos repetidos ("excelente", "perfecto", "increíble") y las estructuras predicativas en exceso ("Esto te permite...", "Es ideal para..."). Usa "nosotros" como editorial de KORASELECT y "tú" para dirigirte al lector cuando sume naturalidad.
+- EVITA LA PLANTILLA: cada bloque debe aportar información nueva, no repetir lo ya dicho con otras palabras. Las tarjetas product pueden repetir datos, pero los párrafos y subtítulos deben decir siempre algo distinto, con enfoques, ejemplos y ángulos diferentes.
 - Incluye al menos una tarjeta product por cada 3 bloques.
 - PRODUCTOS DESTACADOS (OBLIGATORIO si se entregan): crea una tarjeta product por CADA producto destacado. Priorízalos siempre sobre el resto del catálogo a la hora de elegir qué productos mostrar en las tarjetas.
 - Si NO hay productos destacados pero sí catálogo, usa los productos del catálogo para las tarjetas product respetando sus amazonUrl e imágenes exactos.
