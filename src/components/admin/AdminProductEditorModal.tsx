@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLockBodyScroll } from '../../lib/useLockBodyScroll';
 import { Product, Category, ColorOption, ProductHighlight, ProductVideo } from '../../types/product';
-import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle, ZoomIn, Check } from 'lucide-react';
+import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle, ZoomIn, Check, Download } from 'lucide-react';
 import { ProductCard } from '../ProductCard';
 import { lookupAmazonProduct } from '../../lib/amazon';
 import { improveAplusCopy } from '../../lib/ai';
@@ -78,6 +78,36 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   const [lightbox, setLightbox] = useState<{ kind: 'gallery' | 'main'; index: number } | null>(null);
   const [replaceUrl, setReplaceUrl] = useState('');
 
+  const fileNameFromUrl = (url: string, fallback: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const last = urlObj.pathname.split('/').filter(Boolean).pop() || '';
+      const clean = last.replace(/[^a-zA-Z0-9._-]/g, '_');
+      return clean ? clean : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const downloadImage = async (url: string, fallbackName: string) => {
+    const filename = fileNameFromUrl(url, fallbackName);
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) throw new Error('Error de red');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      window.open(url, '_blank', 'noopener');
+    }
+  };
+
   const openLightbox = (kind: 'gallery' | 'main', index: number) => {
     setReplaceUrl(kind === 'gallery' ? galleryImages[index] : mainImage);
     setLightbox({ kind, index });
@@ -98,11 +128,20 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   const removeFromLightbox = () => {
     if (!lightbox) return;
     if (lightbox.kind === 'gallery') {
-      setGalleryImages(galleryImages.filter((_, i) => i !== lightbox.index));
+      const remaining = galleryImages.filter((_, i) => i !== lightbox.index);
+      if (remaining.length === 0) {
+        setGalleryImages([]);
+        setLightbox(null);
+        return;
+      }
+      const nextIndex = Math.min(lightbox.index, remaining.length - 1);
+      setGalleryImages(remaining);
+      setLightbox({ kind: 'gallery', index: nextIndex });
+      setReplaceUrl(remaining[nextIndex] ?? '');
     } else {
       setMainImage('');
+      setLightbox(null);
     }
-    setLightbox(null);
   };
 
   const useAsMainFromLightbox = () => {
@@ -115,15 +154,17 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   };
 
   const lightboxPrev = () => {
-    if (!lightbox || lightbox.kind !== 'gallery') return;
-    setLightbox({ kind: 'gallery', index: (lightbox.index - 1 + galleryImages.length) % galleryImages.length });
-    setReplaceUrl(galleryImages[(lightbox.index - 1 + galleryImages.length) % galleryImages.length]);
+    if (!lightbox || lightbox.kind !== 'gallery' || galleryImages.length === 0) return;
+    const next = (lightbox.index - 1 + galleryImages.length) % galleryImages.length;
+    setLightbox({ kind: 'gallery', index: next });
+    setReplaceUrl(galleryImages[next] ?? '');
   };
 
   const lightboxNext = () => {
-    if (!lightbox || lightbox.kind !== 'gallery') return;
-    setLightbox({ kind: 'gallery', index: (lightbox.index + 1) % galleryImages.length });
-    setReplaceUrl(galleryImages[(lightbox.index + 1) % galleryImages.length]);
+    if (!lightbox || lightbox.kind !== 'gallery' || galleryImages.length === 0) return;
+    const next = (lightbox.index + 1) % galleryImages.length;
+    setLightbox({ kind: 'gallery', index: next });
+    setReplaceUrl(galleryImages[next] ?? '');
   };
 
   // Colors State
@@ -454,18 +495,29 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                     />
                   </div>
                   {mainImage && (
-                    <button
-                      type="button"
-                      className="main-image-preview"
-                      onClick={() => openLightbox('main', 0)}
-                      title="Ampliar imagen principal"
-                    >
-                      <img src={mainImage} alt="Imagen principal" onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
-                      <span>
-                        <ZoomIn size={14} />
-                        Ver imagen principal
-                      </span>
-                    </button>
+                    <div className="main-image-actions">
+                      <button
+                        type="button"
+                        className="main-image-preview"
+                        onClick={() => openLightbox('main', 0)}
+                        title="Ampliar imagen principal"
+                      >
+                        <img src={mainImage} alt="Imagen principal" onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
+                        <span>
+                          <ZoomIn size={14} />
+                          Ver imagen principal
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="gallery-download"
+                        onClick={() => downloadImage(mainImage, 'imagen-principal')}
+                        title="Descargar imagen principal"
+                      >
+                        <Download size={14} />
+                        Descargar
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -492,6 +544,9 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                           <span className="gallery-copy" title="Ampliar" onClick={() => openLightbox('gallery', i)}>
                             <ZoomIn size={14} />
                           </span>
+                          <button type="button" className="gallery-download" onClick={() => downloadImage(g, `imagen-${i + 1}`)} title="Descargar imagen">
+                            <Download size={14} />
+                          </button>
                           <button type="button" className="gallery-remove" onClick={() => handleRemoveGalleryImage(i)} title="Quitar imagen">
                             <Trash2 size={14} />
                           </button>
@@ -1347,6 +1402,18 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
           color: #c62828;
         }
 
+        .lightbox-action.download {
+          background: #e3f2fd;
+          border-color: #90caf9;
+          color: #1565c0;
+          font-weight: 700;
+        }
+
+        .lightbox-action.download:hover {
+          background: #bbdefb;
+          border-color: #64b5f6;
+        }
+
         .lightbox-replace {
           display: flex;
           gap: 8px;
@@ -1422,6 +1489,49 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
 
         .gallery-copy:hover {
           color: var(--text-dark);
+        }
+
+        .gallery-download {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          color: var(--text-muted);
+          cursor: pointer;
+          transition: color var(--transition-fast);
+          background: none;
+          border: none;
+          font-size: 0.72rem;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+
+        .gallery-download:hover {
+          color: #1565c0;
+        }
+
+        .gallery-item .gallery-download {
+          margin-left: auto;
+        }
+
+        .main-image-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .main-image-actions .gallery-download {
+          padding: 8px 14px;
+          border-radius: var(--border-radius-pill);
+          border: 1px solid var(--border-color);
+          background-color: var(--bg-main);
+        }
+
+        .main-image-actions .gallery-download:hover {
+          border-color: #90caf9;
+          background-color: #e3f2fd;
+          color: #1565c0;
         }
 
         /* Botón y sugerencias de IA para el copy A+ */
@@ -1553,6 +1663,18 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
               <button type="button" className="lightbox-action danger" onClick={removeFromLightbox}>
                 <Trash2 size={14} />
                 {lightbox.kind === 'main' ? 'Quitar principal' : 'Quitar foto'}
+              </button>
+              <button
+                type="button"
+                className="lightbox-action download"
+                onClick={() => downloadImage(
+                  lightbox.kind === 'gallery' ? galleryImages[lightbox.index] : mainImage,
+                  lightbox.kind === 'gallery' ? `imagen-${lightbox.index + 1}` : 'imagen-principal'
+                )}
+                title="Descargar imagen"
+              >
+                <Download size={14} />
+                Descargar
               </button>
               <div className="lightbox-replace">
                 <input

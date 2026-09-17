@@ -1,3 +1,4 @@
+import { FunctionsHttpError, FunctionsRelayError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 export interface AmazonLookupResult {
@@ -11,6 +12,21 @@ export interface AmazonLookupResult {
   reviewsCount: number | null;
 }
 
+const readErrorBody = async (response: Response): Promise<string> => {
+  try {
+    const text = await response.text();
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.error === 'string') return parsed.error;
+    } catch {
+      // cuerpo no JSON
+    }
+    return text.trim() || `HTTP ${response.status}`;
+  } catch {
+    return `HTTP ${response.status}`;
+  }
+};
+
 /**
  * Consulta la Edge Function `amazon-lookup` para extraer los datos
  * públicos de un producto de Amazon a partir de su URL.
@@ -21,8 +37,13 @@ export const lookupAmazonProduct = async (url: string): Promise<AmazonLookupResu
   });
 
   if (error) {
-    const message = (data as { error?: string } | null)?.error || error.message || 'Error de conexión';
-    throw new Error(message);
+    if (error instanceof FunctionsHttpError && error.context) {
+      throw new Error(await readErrorBody(error.context as Response));
+    }
+    if (error instanceof FunctionsRelayError && error.context) {
+      throw new Error(await readErrorBody(error.context as Response));
+    }
+    throw new Error(error.message || 'Error de conexión con la función de Amazon.');
   }
 
   return data as AmazonLookupResult;

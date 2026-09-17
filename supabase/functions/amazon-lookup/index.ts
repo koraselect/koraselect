@@ -15,8 +15,26 @@ const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+const CHROME_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 const MOBILE_UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+
+const UA_LIST = [USER_AGENT, CHROME_UA, MOBILE_UA];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)));
+}
 
 function extractAsin(url: string): string | null {
   const patterns = [
@@ -107,27 +125,62 @@ function jsonLdPrice(item: Record<string, unknown> | null): number | null {
   return null;
 }
 
+// Recoge todas las URLs contenidas en los bloques `data-a-dynamic-image`
+// de la página (la galería de imágenes del producto). El HTML de Amazon
+// codifica las comillas como &quot;, por lo que se decodifican antes de parsear.
+function collectDynamicImageUrls(page: string): string[] {
+  const clean = page.replace(/\\\//g, '/');
+  const urls = new Set<string>();
+  const re = /data-a-dynamic-image="([^"]*)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(clean)) !== null) {
+    try {
+      const map = JSON.parse(decodeHtmlEntities(m[1])) as Record<string, unknown>;
+      for (const k of Object.keys(map)) {
+        if (k.startsWith('http')) urls.add(k);
+      }
+    } catch {
+      // atributo inválido
+    }
+  }
+  return [...urls];
+}
+
+function galleryImageBaseId(url: string): string {
+  const m = url.match(/images\/I\/([^.]+)[._]/);
+  return m ? m[1] : url;
+}
+
+function galleryImageSize(url: string): number {
+  const m = url.match(/_S[LXUY](\d+)_/);
+  return m ? Number(m[1]) : 0;
+}
+
+function isThumbnailVariant(url: string): boolean {
+  return /_(AC_UL|AC_Uy|AC_Ux|CR_|US_|SR)/i.test(url);
+}
+
+// Devuelve las imágenes reales del producto (host m.media-amazon.com),
+// una sola versión por foto (la de mayor resolución), ordenadas de mayor a menor.
+function extractGalleryImages(page: string): string[] {
+  const byBase = new Map<string, string>();
+  for (const url of collectDynamicImageUrls(page)) {
+    if (!url.includes('m.media-amazon.com') || isThumbnailVariant(url)) continue;
+    const base = galleryImageBaseId(url);
+    const current = byBase.get(base);
+    if (!current || galleryImageSize(url) > galleryImageSize(current)) {
+      byBase.set(base, url);
+    }
+  }
+  return [...byBase.values()].sort((a, b) => galleryImageSize(b) - galleryImageSize(a));
+}
+
 function extractImage(page: string, ld: Record<string, unknown> | null): string {
   let img = '';
   if (ld?.image) img = Array.isArray(ld.image) ? String(ld.image[0]) : String(ld.image);
   if (!img.startsWith('http')) {
-    const dyn = page.match(/data-a-dynamic-image="(\{[^}]*\})/);
-    if (dyn) {
-      try {
-        const map: Record<string, unknown> = JSON.parse(dyn[1]);
-        const keys = Object.keys(map);
-        const best = keys
-          .filter((k) => !/_(AC_UL|AC_Uy|AC_Ux|CR_|US_)/i.test(k))
-          .sort((a, b) => {
-            const na = Number(a.match(/_SL(\d+)/)?.[1] || 0);
-            const nb = Number(b.match(/_SL(\d+)/)?.[1] || 0);
-            return nb - na;
-          });
-        img = best[0] || keys[0] || '';
-      } catch {
-        // atributo inválido
-      }
-    }
+    const gallery = extractGalleryImages(page);
+    img = gallery[0] || '';
   }
   if (!img.startsWith('http')) img = page.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"/i)?.[1] || '';
   if (!img.startsWith('http')) img = page.match(/id="landingImage"[^>]*data-old-hires="([^"]+)"/i)?.[1] || '';
@@ -139,54 +192,12 @@ function extractImage(page: string, ld: Record<string, unknown> | null): string 
       .filter((id) => id.length <= 40 && !/\.\.\.$/.test(id))
       .map((id) => `https://m.media-amazon.com/images/I/${id}`);
     const best = urls
-      .filter((u) => !/_(AC_UL|AC_Uy|AC_Ux|CR_|US_)/i.test(u))
-      .sort((a, b) => {
-        const na = Number(a.match(/_SL(\d+)/)?.[1] || 0);
-        const nb = Number(b.match(/_SL(\d+)/)?.[1] || 0);
-        return nb - na;
-      });
+      .filter((u) => !isThumbnailVariant(u))
+      .sort((a, b) => galleryImageSize(b) - galleryImageSize(a));
     img = best[0] || urls[0] || '';
   }
   if (img.startsWith('//')) img = `https:${img}`;
   return img;
-}
-
-// Devuelve todas las imágenes de la galería del producto (bloque
-// data-a-dynamic-image de la sección de imágenes de Amazon).
-function extractGalleryImages(page: string): string[] {
-  const clean = page.replace(/\\\//g, '/');
-
-  const dyn = clean.match(/data-a-dynamic-image="(\{[^}]*\})/);
-  if (dyn) {
-    try {
-      const map: Record<string, unknown> = JSON.parse(dyn[1]);
-      const keys = Object.keys(map).filter((k) => k.startsWith('http'));
-      if (keys.length > 0) {
-        return keys
-          .sort((a, b) => {
-            const na = Number(a.match(/_SL(\d+)/)?.[1] || 0);
-            const nb = Number(b.match(/_SL(\d+)/)?.[1] || 0);
-            return nb - na;
-          });
-      }
-    } catch {
-      // atributo inválido
-    }
-  }
-
-  // Fallback: recolectar las imágenes hi-res incrustadas en la página.
-  const seen = new Set<string>();
-  const urls: string[] = [];
-  for (const m of clean.matchAll(/https:\/\/m\.media-amazon\.com\/images\/I\/([A-Za-z0-9._-]+)/g)) {
-    const id = m[1].replace(/[)_"',<>&;]+$/, '');
-    if (id.length > 40 || /\.\.\.$/.test(id)) continue;
-    if (!/_SL\d+_\.jpg$/.test(id)) continue;
-    if (!seen.has(id)) {
-      seen.add(id);
-      urls.push(`https://m.media-amazon.com/images/I/${id}`);
-    }
-  }
-  return urls;
 }
 
 Deno.serve(async (req) => {
@@ -220,32 +231,43 @@ Deno.serve(async (req) => {
     }
 
     const base = amazonBaseFromUrl(rawUrl);
-    const attempts: { url: string; ua: string }[] = [
-      { url: `${base}/dp/${asin}`, ua: USER_AGENT },
-      { url: `${base}/gp/aw/d/${asin}`, ua: MOBILE_UA },
+    const attemptUrls = [
+      `${base}/dp/${asin}`,
+      `${base}/gp/aw/d/${asin}`,
+      rawUrl,
     ];
 
     let page = '';
     let fetchedUrl = '';
-    for (const attempt of attempts) {
-      try {
-        const res = await fetch(attempt.url, {
-          headers: {
-            'User-Agent': attempt.ua,
-            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-          },
-          redirect: 'follow',
-        });
-        if (res.ok) {
-          page = await res.text();
-          fetchedUrl = attempt.url;
-          break;
+    fetchLoop: for (const url of attemptUrls) {
+      for (const ua of UA_LIST) {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (attempt > 0) await sleep(700 * attempt);
+          try {
+            const res = await fetch(url, {
+              headers: {
+                'User-Agent': ua,
+                Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
+                'Cache-Control': 'no-cache',
+                Pragma: 'no-cache',
+                Referer: 'https://www.amazon.com/',
+              },
+              redirect: 'follow',
+            });
+            if (res.ok) {
+              page = await res.text();
+              fetchedUrl = url;
+              break fetchLoop;
+            }
+            if (res.status === 404 || res.status === 410) break; // producto inválido, no reintentar esta combo
+            console.error(`amazon-lookup: ${url} (${ua}) -> HTTP ${res.status}`);
+          } catch (err) {
+            console.error('amazon-lookup fetch fail:', url, err);
+          }
         }
-        console.error(`amazon-lookup: ${attempt.url} -> HTTP ${res.status}`);
-      } catch (err) {
-        console.error('amazon-lookup fetch fail:', attempt.url, err);
       }
+      await sleep(500);
     }
 
     if (!page) {
