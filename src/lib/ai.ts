@@ -201,3 +201,47 @@ export const improveAplusCopy = async (req: {
     subtitles: result.subtitles
   };
 };
+
+export interface AIGenerateSubtitleResult {
+  success: boolean;
+  engine?: 'groq' | 'gemini';
+  subtitle?: string;
+  error?: string;
+}
+
+/**
+ * Redacta con IA el SUBTÍTULO o RESUMEN CORTO de un producto usando
+ * como contexto las características de la sección "About this item"
+ * de Amazon.
+ */
+export const generateSubtitleWithAI = async (req: {
+  title: string;
+  features: string[];
+}): Promise<AIGenerateSubtitleResult> => {
+  const { data, error } = await supabase.functions.invoke('generate-subtitle', {
+    body: {
+      title: req.title,
+      features: req.features
+    }
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  const result = data as { engine?: string; subtitle?: string; error?: string };
+  const subtitle = result.subtitle?.trim();
+  if (!subtitle) {
+    return {
+      success: false,
+      engine: (result.engine as 'groq' | 'gemini') || 'groq',
+      error: result.error || 'La IA no devolvió un subtítulo.'
+    };
+  }
+
+  return {
+    success: true,
+    engine: (result.engine as 'groq' | 'gemini') || 'groq',
+    subtitle
+  };
+};

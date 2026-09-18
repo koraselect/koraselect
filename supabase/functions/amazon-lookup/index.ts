@@ -175,6 +175,33 @@ function extractGalleryImages(page: string): string[] {
   return [...byBase.values()].sort((a, b) => galleryImageSize(b) - galleryImageSize(a));
 }
 
+// Extrae los bullets de la sección "About this item" de Amazon.
+// En el HTML aparecen como spans `.a-list-item` dentro del bloque
+// `#feature-bullets`. Se devuelven en orden, sin duplicados.
+function extractAboutThisItem(page: string): string[] {
+  const clean = page.replace(/\\\//g, '/');
+  const headerIdx = clean.search(/<div[^>]*id=["']feature-bullets["']/i);
+  const headingIdx = headerIdx === -1 ? clean.search(/<h\d[^>]*>[^<]*About this item/i) : -1;
+  const start = headerIdx !== -1 ? headerIdx : headingIdx;
+  if (start === -1) return [];
+
+  let section = clean.slice(start, start + 12000);
+  const cutoff = section.search(/id=["'](productDetails|twister|aplus|productDescription)|<div[^>]*id=["']detailBullets/i);
+  if (cutoff !== -1) section = section.slice(0, cutoff);
+
+  const bullets: string[] = [];
+  const re = /<span[^>]*class=["'][^"']*\ba-list-item\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(section)) !== null) {
+    let b = stripTags(m[1]);
+    if (!b || b.length < 3) continue;
+    b = b.replace(/read more.*$/i, '').replace(/\s+/g, ' ').trim();
+    if (!b || bullets.includes(b)) continue;
+    bullets.push(b);
+  }
+  return bullets.slice(0, 15);
+}
+
 // Extrae un subtítulo corto del producto a partir del meta description
 // de Amazon (por ejemplo: "for Wide Mouth and Regular Mouth Mason Jar").
 function extractSubtitle(page: string, productTitle: string): string {
@@ -352,6 +379,7 @@ Deno.serve(async (req) => {
         url: fetchedUrl || rawUrl,
         title,
         subtitle: extractSubtitle(page, title),
+        features: extractAboutThisItem(page),
         price,
         image,
         images: extractGalleryImages(page),

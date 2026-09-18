@@ -6,6 +6,7 @@ export interface AmazonLookupResult {
   url: string;
   title: string;
   subtitle?: string;
+  features?: string[];
   price: number | null;
   image: string;
   images: string[];

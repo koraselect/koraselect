@@ -4,7 +4,7 @@ import { Product, Category, ColorOption, ProductHighlight, ProductVideo } from '
 import { X, Save, Eye, Link, Upload, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Layers, Shield, Loader2, AlertCircle, PlayCircle, ZoomIn, Check, Download } from 'lucide-react';
 import { ProductCard } from '../ProductCard';
 import { lookupAmazonProduct } from '../../lib/amazon';
-import { improveAplusCopy } from '../../lib/ai';
+import { improveAplusCopy, generateSubtitleWithAI } from '../../lib/ai';
 
 interface AdminProductEditorModalProps {
   productToEdit?: Product | null;
@@ -44,6 +44,7 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
   const [asin, setAsin] = useState(productToEdit?.asin || '');
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState('');
+  const [subtitleAiLoading, setSubtitleAiLoading] = useState(false);
 
   // Galería y Videos State
   const [galleryImages, setGalleryImages] = useState<string[]>(productToEdit?.galleryImages || []);
@@ -251,8 +252,10 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
       return;
     }
     setLookupLoading(true);
+    setSubtitleAiLoading(false);
     try {
       const data = await lookupAmazonProduct(url);
+      const features = data.features || [];
       if (data.title && !title) setTitle(data.title);
       if (data.subtitle && !subtitle) setSubtitle(data.subtitle);
       if (data.price !== null && data.price > 0) setPrice(data.price.toString());
@@ -264,6 +267,22 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
         .filter((u: string) => u !== data.image)
         .filter((u: string) => u.startsWith('http') && !galleryImages.includes(u));
       if (extras.length > 0) setGalleryImages([...galleryImages, ...extras]);
+
+      // Si Amazon no dio subtítulo, redactarlo con IA usando la
+      // sección "About this item" como contexto.
+      if (!data.subtitle && !subtitle && (features.length > 0 || data.title)) {
+        setSubtitleAiLoading(true);
+        try {
+          const res = await generateSubtitleWithAI({
+            title: data.title || title || '',
+            features
+          });
+          if (res.success && res.subtitle) setSubtitle(res.subtitle);
+          else if (res.error && !res.subtitle) setLookupError(res.error);
+        } finally {
+          setSubtitleAiLoading(false);
+        }
+      }
     } catch (e) {
       setLookupError(e instanceof Error ? e.message : 'No se pudo extraer el producto de Amazon.');
     } finally {
@@ -467,10 +486,16 @@ export const AdminProductEditorModal: React.FC<AdminProductEditorModalProps> = (
                     type="button"
                     className="btn-autofill-amazon"
                     onClick={handleAutoFillFromAmazon}
-                    disabled={lookupLoading}
+                    disabled={lookupLoading || subtitleAiLoading}
                   >
-                    {lookupLoading ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />}
-                    <span>{lookupLoading ? 'Extrayendo datos de Amazon…' : 'Autorellenar desde Amazon'}</span>
+                    {lookupLoading ? <Loader2 size={15} className="spin" /> : subtitleAiLoading ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />}
+                    <span>
+                      {lookupLoading
+                        ? 'Extrayendo datos de Amazon…'
+                        : subtitleAiLoading
+                          ? 'Redactando subtítulo con IA…'
+                          : 'Autorellenar desde Amazon'}
+                    </span>
                   </button>
                   {lookupError && (
                     <span className="autofill-error">
